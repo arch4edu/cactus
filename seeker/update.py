@@ -5,6 +5,7 @@ if __name__ == '__main__':
     import sys
     import json
     import logging
+    from tqdm import tqdm
     from datetime import datetime, timedelta
     from tornado.log import enable_pretty_logging
     from tornado.options import options
@@ -15,20 +16,23 @@ if __name__ == '__main__':
     logger = logging.getLogger()
     enable_pretty_logging(options=options, logger=logger)
 
-    with open('newver.json') as f:
-        newver = json.load(f)
+    lines = open('nvchecker.log').readlines()
 
     logger.info('Updating newver')
-    for key, value in newver.items():
+    for line in tqdm(lines):
+        line = json.loads(line)
         try:
-            record = Version.objects.get(key=key)
+            record = Version.objects.get(key=line['name'])
         except Version.DoesNotExist:
-            record = Version(key=key)
-        if record.newver != value:
-            record.newver = value
-            record.save()
+            record = Version(key=line['name'])
+        if line['event'] != 'updated':
+            line['version'] = 'ERROR'
+        if record.newver != line['version']:
+            record.newver = line['version']
+            record.newver = 'ERROR'
+        record.save()
 
-    logger.info('Marking staled')
+    logger.info('Marking staled and error')
 
     for record in Version.objects.exclude(newver__exact=F('oldver')):
         key = record.key[:record.key.find(':')]
@@ -37,6 +41,10 @@ if __name__ == '__main__':
         except Status.DoesNotExist:
             status = Status(key=key)
 
+        if status.status != 'ERROR' and record.newver == 'ERROR':
+            status.status = 'ERROR'
+            status.detail = 'nvchecker failed'
+            status.save()
         if status.status in ['', 'PUBLISHED']:
             status.status = 'STALED'
             status.save()

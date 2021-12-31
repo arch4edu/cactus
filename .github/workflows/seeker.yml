@@ -51,7 +51,7 @@ jobs:
         run: python -m cactus.seeker.collect repository
 
       - name: Run nvchecker
-        run: nvchecker --logger both -c nvchecker.toml
+        run: nvchecker --logger both -c nvchecker.toml | nvchecker.log
 
       - name: Update database
         env:

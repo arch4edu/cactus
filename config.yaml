@@ -1,0 +1,22 @@
+mode: debug
+repository: username/repository
+database:
+  ENGINE: django.db.backends.mysql
+  HOST: host
+  PORT: port
+  NAME: database
+  USER: username
+  PASSWORD: password
+  OPTIONS:
+    charset: utf8mb4
+    init_command: SET sql_mode='STRICT_TRANS_TABLES'
+scheduler:
+    default: GitHubActions
+    GitHubActions:
+      max_parallel: 20
+    x86_64:
+      max_parallel: 1
+    arm:
+      max_parallel: 1
+email:
+  address: cactus@example.com
