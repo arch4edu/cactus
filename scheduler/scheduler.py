@@ -52,7 +52,8 @@ if __name__ == '__main__':
     from datetime import datetime, timedelta
     from tornado.log import enable_pretty_logging
     from tornado.options import options
-    from recorder.models import Status
+    from ..models import Status
+    from .. import config
 
     options.logging = 'debug'
     logger = logging.getLogger()
@@ -87,19 +88,35 @@ if __name__ == '__main__':
     for i in staled:
         recursively_skip(dependency_graph, reversed_dependency_graph, i)
 
-    staled = [i.key for i in Status.objects.filter(status='BUILDING')]
-    for i in staled:
+    building = [i.key for i in Status.objects.filter(status='BUILDING')]
+    for i in building:
         recursively_skip(dependency_graph, reversed_dependency_graph, i)
 
     sorter = TopologicalSorter(dependency_graph)
     order = list(sorter.static_order())
     order = [i for i in order if i in staled]
 
-    resources = json.loads(os.environ['SCHEDULER_RESOURCE'])
+    resources = config['scheduler']
 
     for group in resources.keys():
-        resources[group]['used'] = Status.objects.count(detail__startswith(group))
+        if group == 'default':
+            continue
+        resources[group]['used'] = Status.objects.filter(detail__startswith=group).count()
+        logger.info('%s: %d / %d', group, resources[group]['used'], resources[group]['total'])
 
     for i in order:
+        if i == 'dummy':
+            continue
+        with open(repository / i / 'lilac.yaml') as f:
+            lilac = yaml.safe_load(f)
         # TODO
         # Build i if i.group.used < i.group.max_parellel
+        if not 'group' in lilac:
+            if 'armv6h' in i or 'armv7h' in i or 'aarch64' in i:
+                lilac['group'] = 'arm'
+            else:
+                lilac['group'] = resources['default']
+        if resources[lilac['group']]['used'] < resources[lilac['group']]['total']:
+            status = Status.objects.filter(key=i)
+            logger.info('Building %s', i)
+            sys.exit()
