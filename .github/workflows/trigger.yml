@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: archlinux
+    env:
+      CACTUS_CONFIG: ${{ secrets.CACTUS_CONFIG }}
 
     steps:
       - name: Get time
@@ -40,7 +42,7 @@ jobs:
 
       - uses: actions/checkout@master
         with:
-          path: lilac
+          path: cactus
 
       - uses: actions/checkout@master
         with:
@@ -48,7 +50,4 @@ jobs:
           path: djangorm
 
       - name: Update database
-        env:
-          RECORDER_DATABASE: ${{ secrets.RECORDER_DATABASE }}
-          PYTHONPATH: .:lilac/lilac3
-        run: python lilac/lilac3/seeker/trigger.py ${{ github.event.inputs.pkgbase }}
+        run: python -m cactus.seeker.trigger ${{ github.event.inputs.pkgbase }}

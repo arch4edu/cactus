@@ -33,7 +33,7 @@ jobs:
       - name: Install runtime dependencies
         run: |
           pacman -Syu --noconfirm
-          pacman -S --noconfirm --needed nvchecker python-django python-mysqlclient python-tqdm python-toml python-tornado python-yaml yq
+          pacman -S --noconfirm --needed nvchecker python-django python-mysqlclient python-tqdm python-toml python-tornado python-yaml
 
       - uses: actions/checkout@master
         with:
@@ -44,9 +44,13 @@ jobs:
           repository: petronny/djangorm
           path: djangorm
 
+      - name: Export config
+        id: config
+        run: python -m cactus.common.config
+
       - uses: actions/checkout@master
         with:
-          repository: ${{ secrets.REPOSITORY }}
+          repository: ${{ steps.config.outputs.github_repository }}
           path: repository
 
       - name: Collecting lilac.yaml
