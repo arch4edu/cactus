@@ -8,6 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: archlinux
+    env:
+      CACTUS_CONFIG: ${{ secrets.CACTUS_CONFIG }}
 
     steps:
       - name: Get time
@@ -31,7 +33,7 @@ jobs:
       - name: Install runtime dependencies
         run: |
           pacman -Syu --noconfirm
-          pacman -S --noconfirm --needed nvchecker python-django python-mysqlclient python-toml python-tornado python-yaml
+          pacman -S --noconfirm --needed nvchecker python-django python-mysqlclient python-tqdm python-toml python-tornado python-yaml yq
 
       - uses: actions/checkout@master
         with:
@@ -51,9 +53,7 @@ jobs:
         run: python -m cactus.seeker.collect repository
 
       - name: Run nvchecker
-        run: nvchecker --logger both -c nvchecker.toml | nvchecker.log
+        run: nvchecker --logger both -c nvchecker.toml | tee nvchecker.log
 
       - name: Update database
-        env:
-          RECORDER_DATABASE: ${{ secrets.RECORDER_DATABASE }}
         run: python -m cactus.seeker.update
