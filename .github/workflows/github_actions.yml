@@ -1,0 +1,119 @@
+name: Builder (Github Actions)
+
+on:
+  workflow_dispatch:
+    inputs:
+      pkgbase:
+        description: 'Path to pkgbase'
+        required: true
+      uuid:
+        description: 'uuid of this run'
+        required: true
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux
+      options: --privileged
+      volumes:
+        - /sys/fs/cgroup:/sys/fs/cgroup
+    env:
+      CACTUS_CONFIG: ${{ secrets.CACTUS_CONFIG }}
+
+    steps:
+      - name: Get time
+        id: time
+        run: echo "::set-output name=time::$(date +%F-%T)"
+
+      - name: Set up pacman db cache
+        uses: actions/cache@master
+        with:
+          path: /var/lib/pacman/sync
+          key: pacman-db-x86_64-${{ steps.time.outputs.time }}
+          restore-keys: pacman-db-x86_64-
+
+      - name: Set up pacman package cache
+        uses: actions/cache@master
+        with:
+          path: /var/cache/pacman/pkg
+          key: pacman-package-x86_64-${{ steps.time.outputs.time }}
+          restore-keys: pacman-package-x86_64-
+
+      - uses: actions/checkout@master
+        with:
+          path: cactus
+
+      - name: Export configurations
+        id: config
+        run: python -m cactus.common.config
+
+      - name: Install runtime dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm --needed base-devel devtools dbus git jq wget zsh pyalpm python-lxml python-requests python-setuptools python-toposort python-yaml python-toml
+
+      - name: Configure makepkg
+        run: |
+          sed -e "s|MAKEFLAGS=.*|MAKEFLAGS=-j$(nproc)|" -i /etc/makepkg.conf
+          dbus-uuidgen --ensure=/etc/machine-id
+          useradd -g wheel makepkg
+          echo "%wheel ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+      - uses: actions/checkout@master
+        with:
+          repository: ${{ steps.config.outputs.github_repository }}
+          path: repository
+
+      - uses: actions/checkout@master
+        with:
+          repository: ${{ steps.config.outputs.pacman_keyring_repository }}
+          path: pacman/${{ steps.config.outputs.pacman_repository }}/keyring
+
+      - uses: actions/checkout@master
+        with:
+          repository: ${{ steps.config.outputs.pacman_mirrorlist_repository }}
+          path: pacman/${{ steps.config.outputs.pacman_repository }}/mirrorlist
+
+      - name: Configure pacman repository
+        run: |
+          mkdir -p ~/pacman/${{ steps.config.outputs.pacman_repository }}/db
+          cd ~/pacman/${{ steps.config.outputs.pacman_repository }}
+          cp keyring/* /usr/share/pacman/keyrings/
+          pacman-key --gpgdir gnupg --init
+          pacman-key --gpgdir gnupg --populate ${{ steps.config.outputs.pacman_repository }}
+          echo [options] > pacman.conf
+          pacman-conf | grep '^Architecture' >> pacman.conf
+          echo [${{ steps.config.outputs.pacman_repository }}] >> pacman.conf
+          sed 's/#//' mirrorlist/*mirrorlist* >> pacman.conf
+          pacman -Sy --config pacman.conf --dbpath db
+
+      - name: Configure git
+        run: |
+          cd repository
+          git config user.email ${{ steps.config.outputs.email_address }}
+          git config user.name ${{ steps.config.outputs.email_name }}
+
+      - name: Build
+        run: |
+          cd repository/${{ github.inputs.pkgbase }}
+          chown -R makepkg:root .
+          ls -al
+          set -o pipefail
+          su pkgbuild -c build.sh | tee ~/build.log
+
+      - run: post-build.sh
+
+      - name: Upload workflow id
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ steps.initialization.outputs.pkgbase }}.${{ steps.initialization.outputs.uuid }}
+          path: '~/workflow_id'
+
+      - name: Upload package
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ steps.initialization.outputs.pkgbase }}
+          path: ${{ steps.initialization.outputs.home }}/arch4edu/${{ steps.initialization.outputs.pkgbase }}/*.pkg.tar.zst

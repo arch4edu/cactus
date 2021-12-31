@@ -1,4 +1,4 @@
-name: seeker
+name: Seeker
 
 on: workflow_dispatch
 
