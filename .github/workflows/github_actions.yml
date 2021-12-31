@@ -45,14 +45,19 @@ jobs:
         with:
           path: cactus
 
-      - name: Export configurations
-        id: config
-        run: python -m cactus.common.config
+      - uses: actions/checkout@master
+        with:
+          repository: petronny/djangorm
+          path: djangorm
 
       - name: Install runtime dependencies
         run: |
           pacman -Syu --noconfirm
-          pacman -S --noconfirm --needed base-devel devtools dbus git jq wget zsh pyalpm python-lxml python-requests python-setuptools python-toposort python-yaml python-toml
+          pacman -S --noconfirm --needed base-devel devtools dbus git jq wget zsh pyalpm python-django python-mysqlclient python-lxml python-requests python-setuptools python-toposort python-yaml python-toml yq
+
+      - name: Export configurations
+        id: config
+        run: python -m cactus.common.config
 
       - name: Configure makepkg
         run: |
@@ -78,8 +83,8 @@ jobs:
 
       - name: Configure pacman repository
         run: |
-          mkdir -p ~/pacman/${{ steps.config.outputs.pacman_repository }}/db
-          cd ~/pacman/${{ steps.config.outputs.pacman_repository }}
+          mkdir -p pacman/${{ steps.config.outputs.pacman_repository }}/db
+          cd pacman/${{ steps.config.outputs.pacman_repository }}
           cp keyring/* /usr/share/pacman/keyrings/
           pacman-key --gpgdir gnupg --init
           pacman-key --gpgdir gnupg --populate ${{ steps.config.outputs.pacman_repository }}
@@ -95,9 +100,12 @@ jobs:
           git config user.email ${{ steps.config.outputs.email_address }}
           git config user.name ${{ steps.config.outputs.email_name }}
 
+      - name: Add path
+        run: echo "$(realpath cactus/builder)" >> $GITHUB_PATH
+
       - name: Build
         run: |
-          cd repository/${{ github.inputs.pkgbase }}
+          cd repository/${{ github.event.inputs.pkgbase }}
           chown -R makepkg:root .
           ls -al
           set -o pipefail
