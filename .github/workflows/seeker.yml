@@ -53,7 +53,7 @@ jobs:
           repository: ${{ steps.config.outputs.github_repository }}
           path: repository
 
-      - name: Collecting lilac.yaml
+      - name: Collecting cactus.yaml
         run: python -m cactus.seeker.collect repository
 
       - name: Run nvchecker

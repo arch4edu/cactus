@@ -24,19 +24,19 @@ if __name__ == '__main__':
     config.__config__.oldver = '/dev/null'
     config.__config__.newver = 'newver.json'
 
-    for i in repository.rglob('lilac.yaml'):
+    for i in repository.rglob('cactus.yaml'):
         try:
             pkgbase = str(i.parent)[len(str(repository))+1:]
             with open(i) as f:
-                lilac = yaml.safe_load(f)
-            for j, update_on in enumerate(lilac['update_on']):
-                if 'alias' in update_on.keys():
-                    config[f'{pkgbase}:{j}'] = aliases[update_on['alias']]
+                cactus = yaml.safe_load(f)
+            for j, nvchecker in enumerate(cactus['nvchecker']):
+                if 'alias' in nvchecker.keys():
+                    config[f'{pkgbase}:{j}'] = aliases[nvchecker['alias']]
                 else:
-                    for key, value in update_on.items():
+                    for key, value in nvchecker.items():
                         if value is None:
-                            update_on[key] = i.parent.name
-                    config[f'{pkgbase}:{j}'] = update_on
+                            nvchecker[key] = i.parent.name
+                    config[f'{pkgbase}:{j}'] = nvchecker
             logger.debug('Loaded %s', pkgbase)
         except:
             logger.error(f'Failed to load %s', pkgbase)

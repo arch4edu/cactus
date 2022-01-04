@@ -1,10 +1,10 @@
 #!/bin/zsh
-build_prefix=$(yq -r .build_prefix lilac.yaml)
+build_prefix=$(yq -r .build_prefix cactus.yaml)
 
-pre_build=$(yq -r '.pre_build' lilac.yaml)
+pre_build=$(yq -r '.pre_build' cactus.yaml)
 [ $(echo $pre_build | wc -l) -gt 1 ] && pre_build=$(echo $pre_build | jq -r '.[]')
 
-post_build=$(yq -r '.post_build' lilac.yaml)
+post_build=$(yq -r '.post_build' cactus.yaml)
 [ $(echo $post_build | wc -l) -gt 1 ] && post_build=$(echo $post_build | jq -r '.[]')
 
 echo $pre_build | sh

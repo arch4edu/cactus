@@ -1,4 +1,4 @@
 #!/bin/sh
 git rm -f *
-git checkout HEAD lilac.yaml
+git checkout HEAD cactus.yaml
 download-snapshot-from-aur $1

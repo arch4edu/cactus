@@ -59,13 +59,6 @@ jobs:
         id: config
         run: python -m cactus.common.config
 
-      - name: Configure makepkg
-        run: |
-          sed -e "s|MAKEFLAGS=.*|MAKEFLAGS=-j$(nproc)|" -i /etc/makepkg.conf
-          dbus-uuidgen --ensure=/etc/machine-id
-          useradd -g wheel makepkg
-          echo "%wheel ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-
       - uses: actions/checkout@master
         with:
           repository: ${{ steps.config.outputs.github_repository }}
@@ -80,6 +73,13 @@ jobs:
         with:
           repository: ${{ steps.config.outputs.pacman_mirrorlist_repository }}
           path: pacman/${{ steps.config.outputs.pacman_repository }}/mirrorlist
+
+      - name: Configure makepkg
+        run: |
+          sed -e "s|MAKEFLAGS=.*|MAKEFLAGS=-j$(nproc)|" -i /etc/makepkg.conf
+          dbus-uuidgen --ensure=/etc/machine-id
+          useradd -g wheel makepkg
+          echo "%wheel ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
       - name: Configure pacman repository
         run: |
@@ -105,8 +105,7 @@ jobs:
 
       - name: Build
         run: |
+          chown -R makepkg:root repository
           cd repository/${{ github.event.inputs.pkgbase }}
-          chown -R makepkg:root .
-          ls -al
           set -o pipefail
           su makepkg -c cactus-build | tee ~/build.log
