@@ -53,7 +53,7 @@ jobs:
       - name: Install runtime dependencies
         run: |
           pacman -Syu --noconfirm
-          pacman -S --noconfirm --needed base-devel devtools dbus git jq wget zsh pyalpm python-django python-mysqlclient python-lxml python-requests python-setuptools python-toposort python-yaml python-toml yq
+          pacman -S --noconfirm --needed base-devel devtools dbus git jq wget zsh pyalpm python-django python-mysqlclient python-lxml python-requests python-setuptools python-toposort python-yaml python-toml yq zsh
 
       - name: Export configurations
         id: config
@@ -109,19 +109,4 @@ jobs:
           chown -R makepkg:root .
           ls -al
           set -o pipefail
-          su pkgbuild -c build.sh | tee ~/build.log
-
-      - run: post-build.sh
-
-      - name: Upload workflow id
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ steps.initialization.outputs.pkgbase }}.${{ steps.initialization.outputs.uuid }}
-          path: '~/workflow_id'
-
-      - name: Upload package
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ steps.initialization.outputs.pkgbase }}
-          path: ${{ steps.initialization.outputs.home }}/arch4edu/${{ steps.initialization.outputs.pkgbase }}/*.pkg.tar.zst
+          su makepkg -c cactus-build | tee ~/build.log

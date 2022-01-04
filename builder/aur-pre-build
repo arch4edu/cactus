@@ -1,0 +1,4 @@
+#!/bin/sh
+git rm -f *
+git checkout HEAD lilac.yaml
+download-snapshot-from-aur $1

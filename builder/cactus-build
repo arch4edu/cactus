@@ -1,0 +1,14 @@
+#!/bin/zsh
+build_prefix=$(yq -r .build_prefix lilac.yaml)
+
+pre_build=$(yq -r '.pre_build' lilac.yaml)
+[ $(echo $pre_build | wc -l) -gt 1 ] && pre_build=$(echo $pre_build | jq -r '.[]')
+
+post_build=$(yq -r '.post_build' lilac.yaml)
+[ $(echo $post_build | wc -l) -gt 1 ] && post_build=$(echo $post_build | jq -r '.[]')
+
+echo $pre_build | sh
+ls > .cactus_filelist
+$build_prefix-build -- -- --noprogressbar
+echo $post_build | sh
+rm -f .cactus_filelist
