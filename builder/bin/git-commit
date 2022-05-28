@@ -2,11 +2,11 @@
 pkgbase=$(realpath .)
 pkgbase=$(basename "${pkgbase}")
 
-status=$(git status -s | grep -v '^??')
-[ -z "$status" ] && exit
+git_status=$(git status -s | grep -v '^??')
+[ -z "$git_status" ] && exit
 
 srcinfo=$(makepkg --printsrcinfo)
-pkgver=$(echo srcinfo | grep 'pkgver = ' | awk '{print $3}')
-pkgrel=$(echo srcinfo | grep 'pkgrel = ' | awk '{print $3}')
+pkgver=$(echo $srcinfo | grep 'pkgver = ' | awk '{print $3}')
+pkgrel=$(echo $srcinfo | grep 'pkgrel = ' | awk '{print $3}')
 
-git commit -m "${pkgbase}:auto updated to ${pkgver}-${pkgrel}"
+git commit -m "${pkgbase}: auto updated to ${pkgver}-${pkgrel}"

@@ -53,7 +53,7 @@ jobs:
       - name: Install runtime dependencies
         run: |
           pacman -Syu --noconfirm
-          pacman -S --noconfirm --needed base-devel devtools dbus git jq wget zsh pyalpm python-django python-mysqlclient python-lxml python-requests python-setuptools python-toposort python-yaml python-toml yq zsh
+          pacman -S --noconfirm --needed base-devel devtools dbus git jq wget zsh pyalpm python-django python-mysqlclient python-lxml python-requests python-setuptools python-toposort python-tornado python-yaml python-toml yq zsh
 
       - name: Export configurations
         id: config
@@ -63,6 +63,12 @@ jobs:
         with:
           repository: ${{ steps.config.outputs.github_repository }}
           path: repository
+          token: ${{ steps.config.outputs.github_token }}
+
+      - uses: actions/checkout@master
+        with:
+          repository: petronny/cactus
+          path: cactus
 
       - uses: actions/checkout@master
         with:
@@ -96,6 +102,7 @@ jobs:
 
       - name: Configure git
         run: |
+          git config --global --add safe.directory $(realpath repository)
           cd repository
           git config user.email ${{ steps.config.outputs.email_address }}
           git config user.name ${{ steps.config.outputs.email_name }}
@@ -125,12 +132,14 @@ jobs:
 
       - name: Push and update status
         run: |
-          git config --global --add safe.directory repository
           cd repository/${{ github.event.inputs.pkgbase }}
+          git-commit
           git-push
           if [ $(grep -c '==> Running checkpkg' build.log) -gt 0 ]
           then
-            python -m cactus.builder.update ${{ github.event.inputs.pkgbase }} built
+            cd ../..
+            python -m cactus.builder.update ${{ github.event.inputs.pkgbase }} built ${{ github.run_id}}
           else
-            python -m cactus.builder.update ${{ github.event.inputs.pkgbase }} error
+            cd ../..
+            python -m cactus.builder.update ${{ github.event.inputs.pkgbase }} error ${{ github.run_id}}
           fi

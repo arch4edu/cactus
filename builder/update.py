@@ -3,28 +3,23 @@
 if __name__ == '__main__':
     import os
     import sys
-    import json
     import logging
-    from tqdm import tqdm
-    from datetime import datetime, timedelta
     from tornado.log import enable_pretty_logging
     from tornado.options import options
-    from django.db.models import F
-    from ..models import Status, Version
+    from ..models import Status
 
     options.logging = 'debug'
     logger = logging.getLogger()
     enable_pretty_logging(options=options, logger=logger)
 
-    key = sys.argv[1]
-    build_status = sys.argv[2]
+    _, key, build_status, run_id = sys.argv
 
     status = Status.objects.get(key=key)
 
     if build_status == 'built':
         status.status = 'BUILT'
-        status.detail = f'{os.environ["GITHUB_WORKFLOW"]}'
+        status.detail = f'workflow: {run_id}'
     else:
         status.status = 'ERROR'
-        status.detail = 'build failed. workflow: {os.environ["GITHUB_WORKFLOW"]}'
+        status.detail = f'build failed. workflow: {run_id}'
     status.save()
