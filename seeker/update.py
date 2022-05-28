@@ -5,7 +5,6 @@ if __name__ == '__main__':
     import sys
     import json
     import logging
-    from tqdm import tqdm
     from datetime import datetime, timedelta
     from tornado.log import enable_pretty_logging
     from tornado.options import options
@@ -19,7 +18,7 @@ if __name__ == '__main__':
     lines = open('nvchecker.log').readlines()
 
     logger.info('Updating newver')
-    for line in tqdm(lines):
+    for line in lines:
         line = json.loads(line)
         try:
             record = Version.objects.get(key=line['name'])
@@ -29,7 +28,6 @@ if __name__ == '__main__':
             line['version'] = 'ERROR'
         if record.newver != line['version']:
             record.newver = line['version']
-            record.newver = 'ERROR'
         record.save()
 
     logger.info('Marking staled and error')

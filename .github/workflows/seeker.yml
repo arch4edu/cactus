@@ -1,10 +1,13 @@
 name: Seeker
 
-on: workflow_dispatch
+on:
+  schedule:
+    - cron: '17 1 * * *'
+  workflow_dispatch:
 
 jobs:
 
-  build:
+  seek:
     runs-on: ubuntu-latest
     container:
       image: archlinux
