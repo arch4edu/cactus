@@ -36,7 +36,7 @@ jobs:
       - name: Install runtime dependencies
         run: |
           pacman -Syu --noconfirm
-          pacman -S --noconfirm --needed python-django python-mysqlclient python-tornado python-yaml
+          pacman -S --noconfirm --needed python-django python-mysqlclient python-pygithub python-tornado python-yaml
 
       - uses: actions/checkout@master
         with:

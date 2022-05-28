@@ -1,0 +1,8 @@
+#!/bin/sh
+retry=$1
+[ -z "$retry" ] && retry=10
+for i in $(seq $retry)
+do
+	git pull --rebase
+	git push origin master && break || sleep $i
+done

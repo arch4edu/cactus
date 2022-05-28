@@ -101,11 +101,36 @@ jobs:
           git config user.name ${{ steps.config.outputs.email_name }}
 
       - name: Add path
-        run: echo "$(realpath cactus/builder)" >> $GITHUB_PATH
+        run: echo "$(realpath cactus/builder/bin)" >> $GITHUB_PATH
 
       - name: Build
         run: |
           chown -R makepkg:root repository
           cd repository/${{ github.event.inputs.pkgbase }}
           set -o pipefail
-          su makepkg -c cactus-build | tee ~/build.log
+          su makepkg -c cactus-build | tee build.log
+
+      - name: Upload build log
+        uses: actions/upload-artifact@master
+        if: ${{ always() }}
+        with:
+          name: ${{ github.event.inputs.uuid }}.log
+          path: repository/${{ github.event.inputs.pkgbase }}/build.log
+
+      - name: Upload package
+        uses: actions/upload-artifact@master
+        with:
+          name: ${{ github.event.inputs.uuid }}
+          path: repository/${{ github.event.inputs.pkgbase }}/*.pkg.tar.zst
+
+      - name: Push and update status
+        run: |
+          git config --global --add safe.directory repository
+          cd repository/${{ github.event.inputs.pkgbase }}
+          git-push
+          if [ $(grep -c '==> Running checkpkg' build.log) -gt 0 ]
+          then
+            python -m cactus.builder.update ${{ github.event.inputs.pkgbase }} built
+          else
+            python -m cactus.builder.update ${{ github.event.inputs.pkgbase }} error
+          fi
