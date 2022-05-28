@@ -63,16 +63,16 @@ if __name__ == '__main__':
     dependency_graph = {}
     reversed_dependency_graph = {}
 
-    for i in repository.rglob('lilac.yaml'):
+    for i in repository.rglob('cactus.yaml'):
         try:
             pkgbase = str(i.parent)[len(str(repository))+1:]
             with open(i) as f:
-                lilac = yaml.safe_load(f)
-            if not 'repo_depends' in lilac:
+                cactus = yaml.safe_load(f)
+            if not 'repo_depends' in cactus:
                 add_edge(dependency_graph, pkgbase, 'dummy')
                 add_edge(reversed_dependency_graph, 'dummy', pkgbase)
             else:
-                for j in lilac['repo_depends']:
+                for j in cactus['repo_depends']:
                     add_edge(dependency_graph, pkgbase, j)
                     add_edge(reversed_dependency_graph, j, pkgbase)
             logger.debug(f'Loaded %s', pkgbase)
@@ -107,16 +107,17 @@ if __name__ == '__main__':
     for i in order:
         if i == 'dummy':
             continue
-        with open(repository / i / 'lilac.yaml') as f:
-            lilac = yaml.safe_load(f)
-        # TODO
-        # Build i if i.group.used < i.group.max_parellel
-        if not 'group' in lilac:
+        with open(repository / i / 'cactus.yaml') as f:
+            cactus = yaml.safe_load(f)
+        if not 'group' in cactus:
             if 'armv6h' in i or 'armv7h' in i or 'aarch64' in i:
-                lilac['group'] = 'arm'
+                cactus['group'] = 'arm'
             else:
-                lilac['group'] = resources['default']
-        if resources[lilac['group']]['used'] < resources[lilac['group']]['total']:
+                cactus['group'] = resources['default']
+        if resources[cactus['group']]['used'] < resources[cactus['group']]['total']:
             status = Status.objects.filter(key=i)
             logger.info('Building %s', i)
+            #status.status = 'BUILDING'
+            #status.save()
+
             sys.exit()
