@@ -6,9 +6,6 @@ on:
       pkgbase:
         description: 'Path to pkgbase'
         required: true
-      uuid:
-        description: 'uuid of this run'
-        required: true
 
 jobs:
 
@@ -121,13 +118,13 @@ jobs:
         uses: actions/upload-artifact@master
         if: ${{ always() }}
         with:
-          name: ${{ github.event.inputs.uuid }}.log
+          name: ${{ github.run_id }}.log
           path: repository/${{ github.event.inputs.pkgbase }}/build.log
 
       - name: Upload package
         uses: actions/upload-artifact@master
         with:
-          name: ${{ github.event.inputs.uuid }}
+          name: ${{ github.run_id }}.package
           path: repository/${{ github.event.inputs.pkgbase }}/*.pkg.tar.zst
 
       - name: Push and update status
