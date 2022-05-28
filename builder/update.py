@@ -4,6 +4,7 @@ if __name__ == '__main__':
     import os
     import sys
     import logging
+    import json
     from tornado.log import enable_pretty_logging
     from tornado.options import options
     from ..models import Status
@@ -16,10 +17,12 @@ if __name__ == '__main__':
 
     status = Status.objects.get(key=key)
 
+    detail = {}
+    detail['workflow'] = run_id
     if build_status == 'built':
         status.status = 'BUILT'
-        status.detail = f'workflow: {run_id}'
     else:
         status.status = 'ERROR'
-        status.detail = f'build failed. workflow: {run_id}'
+        detail['message'] = 'Build failed.'
+    status.detail = json.dumps(detail)
     status.save()
