@@ -131,9 +131,10 @@ jobs:
         run: |
           cd repository/${{ github.event.inputs.pkgbase }}
           git-commit
-          git-push
+          git-push || exit
 
       - name: Update status
+        if: ${{ always() }}
         run: |
           if [ $(grep -c '==> Running checkpkg' repository/${{ github.event.inputs.pkgbase }}/build.log) -gt 0 ]
           then
