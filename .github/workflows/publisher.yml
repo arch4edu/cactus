@@ -61,17 +61,6 @@ jobs:
         run: |
           echo ${{ steps.config.outputs.github_token }} | gh auth login --with-token
 
-      - name: Download built packages
-        run: |
-          python -m cactus.publisher.download
-
-      - name: Sign packages
-        run: |
-          for i in *.pkg.tar.zst
-          do
-            gpg --pinentry-mode loopback --passphrase '' --detach-sign -- $i
-          done
-
       - name: Prepare repository
         run: |
           mkdir repository
@@ -84,22 +73,6 @@ jobs:
             mkdir -p $arch
           done
 
-      - name: Upload packages
+      - name: Download, sign and upload built packages
         run: |
-          set -ex
-          for i in *.pkg.tar.zst
-          do
-            arch=$(echo ${i%.pkg.tar.zst} | rev | cut -d '-' -f1 | rev)
-            [ ! -d $arch ] && continue
-            cp $i $i.sig repository/$arch
-            repo-add repository/$arch/${{ steps.config.outputs.pacman_repository }}.db.tar.gz repository/$arch/$i
-            if [ "$arch" = "any" ]
-            then
-              for arch in ${{ steps.config.outputs.pacman_archs }}
-              do
-                ln -s ../any/$i repository/$arch
-                ln -s ../any/$i.sig repository/$arch
-                repo-add repository/$arch/${{ steps.config.outputs.pacman_repository }}.db.tar.gz repository/$arch/$i
-              done
-            fi
-          done
+          python -m cactus.publisher.upload
