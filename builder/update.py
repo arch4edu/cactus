@@ -7,7 +7,7 @@ if __name__ == '__main__':
     import json
     from tornado.log import enable_pretty_logging
     from tornado.options import options
-    from ..models import Status
+    from ..models import Status, Version
 
     options.logging = 'debug'
     logger = logging.getLogger()
@@ -26,3 +26,7 @@ if __name__ == '__main__':
         detail['message'] = 'Build failed.'
     status.detail = json.dumps(detail)
     status.save()
+
+    for record in Version.objects.filter(key__startswith=key):
+        record.oldver = record.newver
+        record.save()

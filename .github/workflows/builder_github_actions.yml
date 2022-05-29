@@ -127,16 +127,17 @@ jobs:
           name: ${{ github.run_id }}.package
           path: repository/${{ github.event.inputs.pkgbase }}/*.pkg.tar.zst
 
-      - name: Push and update status
+      - name: Push changes
         run: |
           cd repository/${{ github.event.inputs.pkgbase }}
           git-commit
           git-push
-          if [ $(grep -c '==> Running checkpkg' build.log) -gt 0 ]
+
+      - name: Update status
+        run: |
+          if [ $(grep -c '==> Running checkpkg' repository/${{ github.event.inputs.pkgbase }}/build.log) -gt 0 ]
           then
-            cd ../..
             python -m cactus.builder.update ${{ github.event.inputs.pkgbase }} built ${{ github.run_id}}
           else
-            cd ../..
             python -m cactus.builder.update ${{ github.event.inputs.pkgbase }} error ${{ github.run_id}}
           fi

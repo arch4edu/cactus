@@ -50,7 +50,6 @@ if __name__ == '__main__':
     from graphlib import TopologicalSorter
     from pathlib import Path
     from datetime import datetime, timedelta
-    from uuid import uuid1
     from tornado.log import enable_pretty_logging
     from tornado.options import options
     from ..models import Status
@@ -103,7 +102,7 @@ if __name__ == '__main__':
     for group in resources.keys():
         if group == 'default':
             continue
-        resources[group]['used'] = Status.objects.filter(detail__startswith=group).count()
+        resources[group]['used'] = Status.objects.filter(detail=group).count()
         logger.info('%s: %d / %d', group, resources[group]['used'], resources[group]['total'])
 
     for i in order:
@@ -119,10 +118,9 @@ if __name__ == '__main__':
         if resources[cactus['group']]['used'] < resources[cactus['group']]['total']:
             status = Status.objects.get(key=i)
             logger.info('Building %s', i)
-            uuid = str(uuid1())
-            github_actions.build(i, uuid)
+            github_actions.build(i)
             status.status = 'BUILDING'
-            status.detail = f'uuid: {uuid}'
+            status.detail = cactus['group']
             status.save()
 
             sys.exit()
