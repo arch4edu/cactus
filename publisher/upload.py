@@ -18,6 +18,7 @@ if __name__ == '__main__':
     enable_pretty_logging(options=options, logger=logger)
 
     repository = Path('repository')
+    cache = Path('cache')
 
     for record in Status.objects.filter(status='BUILT'):
         workflow = json.loads(record.detail)['workflow']
@@ -33,15 +34,25 @@ if __name__ == '__main__':
                 continue
             shutil.copy(package, repository / 'any')
             shutil.copy(package.parent / f'{package.name}.sig' , repository / 'any')
-            subprocess.run(['repo-add', repository / arch / f"{config['pacman']['repository']}.db.tar.gz", package])
+
+            db = cache / arch / f"{config['pacman']['repository']}.db.tar.gz"
+            if not db.exists():
+                shutil.copy(repository / arch / db.name, db)
+            subprocess.run(['repo-add', db, package])
+
             if arch == 'any':
                 for arch in config['pacman']['archs'].split(' '):
                     os.symlink(repository / 'any' / package.name, repository / arch / package.name)
                     os.symlink(repository / 'any' / f'{package.name}.sig', repository / arch / f'{package.name}.sig')
-                    subprocess.run(['repo-add', repository / arch / f"{config['pacman']['repository']}.db.tar.gz", package])
+
+                    db = cache / arch / f"{config['pacman']['repository']}.db.tar.gz"
+                    if not db.exists():
+                        shutil.copy(repository / arch / db.name, db)
+                    subprocess.run(['repo-add', db, package])
+
             os.remove(package)
             os.remove(package.parent / f'{package.name}.sig')
-            logger.info('Uploaded %s', package.name)
+            logger.info('Added %s', package.name)
 
         record.status = 'PUBLISHED'
         record.save()

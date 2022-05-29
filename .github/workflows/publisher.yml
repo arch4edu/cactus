@@ -37,7 +37,7 @@ jobs:
       - name: Install runtime dependencies
         run: |
           pacman -Syu --noconfirm
-          pacman -S --noconfirm --needed git github-cli python-django python-mysqlclient python-pygithub python-tornado python-yaml sshfs
+          pacman -S --noconfirm --needed git github-cli python-django python-mysqlclient python-pygithub python-tornado python-yaml sshfs rsync
 
       - uses: actions/checkout@master
         with:
@@ -64,15 +64,17 @@ jobs:
       - name: Prepare repository
         run: |
           mkdir repository
+          mkdir cache
           sshfs -p ${{ steps.config.outputs.publisher_port }} -o IdentityFile=$(realpath ssh.key) \
           -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
           ${{ steps.config.outputs.publisher_username }}@${{ steps.config.outputs.publisher_host }}:\
           ${{ steps.config.outputs.publisher_path }} repository
           for arch in ${{ steps.config.outputs.pacman_archs }}
           do
-            mkdir -p $arch
+            mkdir -p repository/$arch cache/$arch
           done
 
       - name: Download, sign and upload built packages
         run: |
           python -m cactus.publisher.upload
+          rsync -rlptDvP cache/* repository
