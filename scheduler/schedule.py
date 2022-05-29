@@ -122,5 +122,3 @@ if __name__ == '__main__':
             status.status = 'BUILDING'
             status.detail = cactus['group']
             status.save()
-
-            sys.exit()
