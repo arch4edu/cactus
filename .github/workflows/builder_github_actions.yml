@@ -130,8 +130,8 @@ jobs:
       - name: Push changes
         run: |
           cd repository/${{ github.event.inputs.pkgbase }}
-          git-commit
-          git-push || exit
+          git-commit || exit
+          git-push
 
       - name: Update status
         if: ${{ always() }}
