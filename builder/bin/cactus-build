@@ -1,4 +1,6 @@
 #!/bin/zsh
+set -e
+
 build_prefix=$(yq -r .build_prefix cactus.yaml)
 
 pre_build=$(yq -r '.pre_build' cactus.yaml)

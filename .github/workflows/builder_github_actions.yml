@@ -108,11 +108,18 @@ jobs:
         run: echo "$(realpath cactus/builder/bin)" >> $GITHUB_PATH
 
       - name: Build
+        id: build
         run: |
           chown -R makepkg:root repository
           cd repository/${{ github.event.inputs.pkgbase }}
           set -o pipefail
           su makepkg -c cactus-build | tee build.log
+          if [ $(grep -c '==> Running checkpkg' repository/${{ github.event.inputs.pkgbase }}/build.log) -gt 0 ]
+          then
+            echo ::set-output name=result::built
+          else
+            echo ::set-output name=result::error
+          fi
 
       - name: Upload build log
         uses: actions/upload-artifact@master
@@ -129,6 +136,7 @@ jobs:
 
       - name: Push changes
         run: |
+          [ ${{ steps.build.outputs.result }} = 'error' ] && exit 0
           cd repository/${{ github.event.inputs.pkgbase }}
           git-commit || exit
           git-push
@@ -136,9 +144,4 @@ jobs:
       - name: Update status
         if: ${{ always() }}
         run: |
-          if [ $(grep -c '==> Running checkpkg' repository/${{ github.event.inputs.pkgbase }}/build.log) -gt 0 ]
-          then
-            python -m cactus.builder.update ${{ github.event.inputs.pkgbase }} built ${{ github.run_id}}
-          else
-            python -m cactus.builder.update ${{ github.event.inputs.pkgbase }} error ${{ github.run_id}}
-          fi
+          python -m cactus.builder.update ${{ github.event.inputs.pkgbase }} ${{ steps.build.outputs.result }} ${{ github.run_id}}
