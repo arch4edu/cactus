@@ -56,7 +56,7 @@ if __name__ == '__main__':
     from .. import config
     from ..builder import github_actions
 
-    options.logging = 'debug'
+    options.logging = 'info'
     logger = logging.getLogger()
     enable_pretty_logging(options=options, logger=logger)
 
@@ -122,3 +122,5 @@ if __name__ == '__main__':
             status.status = 'BUILDING'
             status.detail = cactus['group']
             status.save()
+            resources[cactus['group']]['used'] += 1
+            logger.info('%s: %d / %d', group, resources[cactus['group']]['used'], resources[group]['total'])

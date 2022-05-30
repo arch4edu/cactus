@@ -30,7 +30,7 @@ if __name__ == '__main__':
     repository = Path('repository')
 
     for record in Status.objects.filter(status='BUILT'):
-        workflow = json.loads(record.detail)['workflow']
+        workflow = record.workflow
         logger.info(f'Downloading {record.key} from {workflow}')
         try:
             run(f"gh run download {workflow} -n {workflow}.package -D ..".split(' '), cwd='cactus')
