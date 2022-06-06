@@ -18,6 +18,7 @@ if __name__ == '__main__':
     status.workflow = run_id
     if build_status == 'built':
         status.status = 'BUILT'
+        status.detail = ''
     else:
         status.status = 'ERROR'
         status.detail = 'Build failed.'

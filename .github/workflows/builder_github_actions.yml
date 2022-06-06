@@ -113,8 +113,8 @@ jobs:
           chown -R makepkg:root repository
           cd repository/${{ github.event.inputs.pkgbase }}
           set -o pipefail
-          su makepkg -c cactus-build | tee build.log
-          if [ $(grep -c '==> Running checkpkg' repository/${{ github.event.inputs.pkgbase }}/build.log) -gt 0 ]
+          su makepkg -c cactus-build | tee build.log || echo
+          if [ $(grep -c '==> Running checkpkg' build.log) -gt 0 ]
           then
             echo ::set-output name=result::built
           else
