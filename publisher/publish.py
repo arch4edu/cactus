@@ -1,6 +1,7 @@
 #!/bin/python
 import os
 import subprocess
+from django.db import connection
 
 def run(command, **kwargs):
     subprocess.run(command, check=True, **kwargs)
@@ -35,7 +36,7 @@ if __name__ == '__main__':
         try:
             run(f"gh run download {workflow} -n {workflow}.package -D ..".split(' '), cwd='cactus')
         except:
-            logger.error('Failed to download %s', package.name)
+            logger.error('Failed to download %s', record.key)
             continue
 
         packages = [i for i in Path('.').glob('*.pkg.tar.zst')]
@@ -61,7 +62,8 @@ if __name__ == '__main__':
                     db = repository / arch / f"{config['pacman']['repository']}.db.tar.gz"
                     subprocess.run(['repo-add', db, repository / arch / package.name])
 
-            logger.info('Added %s', package.name)
+            logger.info('Published %s', package.name)
 
+        connection.connect()
         record.status = 'PUBLISHED'
         record.save()
