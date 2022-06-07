@@ -10,6 +10,9 @@ ls > .cactus_filelist
 # PKGBUILD fixes
 sed -e '/^PKGEXT=/d' -e '/^groups=(/d' -i PKGBUILD
 
+# Recieve GPG keys
+recv-gpg-keys
+
 # Build the package
 build_prefix=$(yq -r .build_prefix cactus.yaml)
 $build_prefix-build -- -- --noprogressbar

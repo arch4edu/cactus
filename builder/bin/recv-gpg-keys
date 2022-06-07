@@ -1,0 +1,9 @@
+#!/bin/bash -e
+
+. /usr/share/makepkg/util.sh
+. ./PKGBUILD
+for key in ${validpgpkeys[@]}; do
+  echo "Receiving key ${key}..."
+  # first check if the key is already received; if not try it twice
+  gpg --list-keys $key || gpg --recv-keys $key || gpg --recv-keys $key
+done
