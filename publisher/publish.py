@@ -42,6 +42,9 @@ if __name__ == '__main__':
         packages = [i for i in Path('.').glob('*.pkg.tar.zst')]
 
         for package in packages:
+            if 'COLON' in package.name:
+                package.rename(package.name.replace('COLON', ':'))
+
             run(['gpg', '--pinentry-mode', 'loopback', '--passphrase', '', '--detach-sign', '--', package])
 
             logger.info('Signed %s', package.name)

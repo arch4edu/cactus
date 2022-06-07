@@ -83,6 +83,7 @@ jobs:
           dbus-uuidgen --ensure=/etc/machine-id
           useradd -g wheel makepkg
           echo "%wheel ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          chown -R makepkg:root repository
 
       - name: Configure pacman repository
         run: |
@@ -110,16 +111,23 @@ jobs:
       - name: Build
         id: build
         run: |
-          chown -R makepkg:root repository
           cd repository/${{ github.event.inputs.pkgbase }}
-          set -o pipefail
-          su makepkg -c cactus-build | tee build.log || echo
+          su makepkg -c cactus-build | tee build.log
           if [ $(grep -c '==> Running checkpkg' build.log) -gt 0 ]
           then
             echo ::set-output name=result::built
           else
             echo ::set-output name=result::error
           fi
+
+      - name: Fix package name
+        if: ${{ steps.build.outputs.result }} == 'built'
+        run: |
+          cd repository/${{ github.event.inputs.pkgbase }}
+          for i in '*.pkg.tar.zst'
+          do
+            [ $(echo $i | grep : -c) -gt 0 ] && mv $i $(echo $i | sed 's/:/COLON/g')
+          done
 
       - name: Upload build log
         uses: actions/upload-artifact@master
@@ -135,8 +143,8 @@ jobs:
           path: repository/${{ github.event.inputs.pkgbase }}/*.pkg.tar.zst
 
       - name: Push changes
+        if: ${{ steps.build.outputs.result }} == 'built'
         run: |
-          [ ${{ steps.build.outputs.result }} = 'error' ] && exit 0
           cd repository/${{ github.event.inputs.pkgbase }}
           git-commit || exit
           git-push
