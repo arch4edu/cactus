@@ -121,7 +121,7 @@ jobs:
           fi
 
       - name: Fix package name
-        if: ${{ steps.build.outputs.result }} == 'built'
+        if: ${{ steps.build.outputs.result == 'built' }}
         run: |
           cd repository/${{ github.event.inputs.pkgbase }}
           for i in '*.pkg.tar.zst'
@@ -143,7 +143,7 @@ jobs:
           path: repository/${{ github.event.inputs.pkgbase }}/*.pkg.tar.zst
 
       - name: Push changes
-        if: ${{ steps.build.outputs.result }} == 'built'
+        if: ${{ steps.build.outputs.result == 'built' }}
         run: |
           cd repository/${{ github.event.inputs.pkgbase }}
           git-commit || exit
