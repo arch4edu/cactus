@@ -81,7 +81,8 @@ jobs:
         run: |
           sed -e "s|MAKEFLAGS=.*|MAKEFLAGS=-j$(nproc)|" -i /etc/makepkg.conf
           dbus-uuidgen --ensure=/etc/machine-id
-          useradd -g wheel makepkg
+          mkdir makepkg
+          useradd -g wheel -d $(realpath makepkg) makepkg
           echo "%wheel ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
           chown -R makepkg:root repository
 
