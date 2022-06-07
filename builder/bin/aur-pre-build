@@ -1,3 +1,3 @@
 #!/bin/sh
 git-rm-all
-download-snapshot-from-aur $1
+download-aur-snapshot $1
