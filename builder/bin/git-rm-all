@@ -1,0 +1,6 @@
+#!/bin/bash
+for i in $(git ls-files .)
+do
+	[ $(basename $i) = "cactus.yaml" ] && continue
+	git rm -f $i
+done
