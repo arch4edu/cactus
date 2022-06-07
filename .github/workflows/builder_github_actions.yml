@@ -82,9 +82,9 @@ jobs:
           sed -e "s|MAKEFLAGS=.*|MAKEFLAGS=-j$(nproc)|" -i /etc/makepkg.conf
           dbus-uuidgen --ensure=/etc/machine-id
           mkdir makepkg
-          useradd -g wheel -d $(realpath makepkg) makepkg
+          useradd -g wheel -d $(realpath makepkg) -m makepkg
           echo "%wheel ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-          chown -R makepkg:root repository
+          chown -R makepkg:root repository makepkg
 
       - name: Configure pacman repository
         run: |
@@ -125,9 +125,9 @@ jobs:
         if: ${{ steps.build.outputs.result == 'built' }}
         run: |
           cd repository/${{ github.event.inputs.pkgbase }}
-          for i in '*.pkg.tar.zst'
+          for i in *.pkg.tar.zst
           do
-            [ $(echo $i | grep : -c) -gt 0 ] && mv $i $(echo $i | sed 's/:/COLON/g')
+            [ $(echo $i | grep : -c) -gt 0 ] && mv $i $(echo $i | sed 's/:/COLON/g') || continue
           done
 
       - name: Upload build log
