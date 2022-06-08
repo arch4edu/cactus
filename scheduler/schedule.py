@@ -69,11 +69,11 @@ if __name__ == '__main__':
             pkgbase = str(i.parent)[len(str(repository))+1:]
             with open(i) as f:
                 cactus = yaml.safe_load(f)
-            if not 'repo_depends' in cactus:
+            if not 'depends' in cactus:
                 add_edge(dependency_graph, pkgbase, 'dummy')
                 add_edge(reversed_dependency_graph, 'dummy', pkgbase)
             else:
-                for j in cactus['repo_depends']:
+                for j in cactus['depends']:
                     add_edge(dependency_graph, pkgbase, j)
                     add_edge(reversed_dependency_graph, j, pkgbase)
             logger.debug(f'Loaded %s', pkgbase)

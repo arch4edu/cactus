@@ -50,7 +50,7 @@ jobs:
       - name: Install runtime dependencies
         run: |
           pacman -Syu --noconfirm
-          pacman -S --noconfirm --needed base-devel devtools dbus git jq wget zsh pyalpm python-django python-mysqlclient python-lxml python-requests python-setuptools python-toposort python-tornado python-yaml python-toml yq zsh
+          pacman -S --noconfirm --needed base-devel devtools dbus git github-cli jq wget zsh pyalpm python-django python-mysqlclient python-lxml python-requests python-setuptools python-toposort python-tornado python-yaml python-toml yq zsh
 
       - name: Export configurations
         id: config
@@ -70,12 +70,12 @@ jobs:
       - uses: actions/checkout@master
         with:
           repository: ${{ steps.config.outputs.pacman_keyring_repository }}
-          path: pacman/${{ steps.config.outputs.pacman_repository }}/keyring
+          path: pacman/keyring
 
       - uses: actions/checkout@master
         with:
           repository: ${{ steps.config.outputs.pacman_mirrorlist_repository }}
-          path: pacman/${{ steps.config.outputs.pacman_repository }}/mirrorlist
+          path: pacman/mirrorlist
 
       - name: Configure makepkg
         run: |
@@ -88,8 +88,8 @@ jobs:
 
       - name: Configure pacman repository
         run: |
-          mkdir -p pacman/${{ steps.config.outputs.pacman_repository }}/db
-          cd pacman/${{ steps.config.outputs.pacman_repository }}
+          mkdir -p pacman/db
+          cd pacman
           cp keyring/* /usr/share/pacman/keyrings/
           pacman-key --gpgdir gnupg --init
           pacman-key --gpgdir gnupg --populate ${{ steps.config.outputs.pacman_repository }}
@@ -106,8 +106,15 @@ jobs:
           git config user.email ${{ steps.config.outputs.email_address }}
           git config user.name ${{ steps.config.outputs.email_name }}
 
+      - name: Configure GitHub CLI
+        run: echo ${{ steps.config.outputs.github_token }} | gh auth login --with-token
+
       - name: Add path
         run: echo "$(realpath cactus/builder/bin)" >> $GITHUB_PATH
+
+      - name: Download dependencies
+        run:
+          python -m cactus.builder.download-depends repository/${{ github.event.inputs.pkgbase }}
 
       - name: Build
         id: build
@@ -153,4 +160,9 @@ jobs:
       - name: Update status
         if: ${{ always() }}
         run: |
-          python -m cactus.builder.update ${{ github.event.inputs.pkgbase }} ${{ steps.build.outputs.result }} ${{ github.run_id}}
+          if [ "${{ steps.build.outputs.result }}" = "built" ]
+          then
+            python -m cactus.builder.update ${{ github.event.inputs.pkgbase }} built ${{ github.run_id}}
+          else
+            python -m cactus.builder.update ${{ github.event.inputs.pkgbase }} error ${{ github.run_id}}
+          fi
