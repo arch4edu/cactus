@@ -25,7 +25,7 @@ if __name__ == '__main__':
         except Version.DoesNotExist:
             record = Version(key=line['name'])
         if line['event'] != 'updated':
-            line['version'] = 'ERROR'
+            line['version'] = 'FAILED'
         if record.newver != line['version']:
             record.newver = line['version']
         record.save()
@@ -39,14 +39,14 @@ if __name__ == '__main__':
         except Status.DoesNotExist:
             status = Status(key=key)
 
-        if status.status != 'ERROR' and record.newver == 'ERROR':
-            status.status = 'ERROR'
+        if status.status != 'FAILED' and record.newver == 'FAILED':
+            status.status = 'FAILED'
             status.detail = 'nvchecker failed'
             status.save()
         if status.status in ['', 'PUBLISHED']:
             status.status = 'STALED'
             status.save()
-        elif status.status == 'ERROR' and datetime.now() - status.timestamp > timedelta(days=1):
+        elif status.status == 'FAILED' and datetime.now() - status.timestamp > timedelta(days=1):
             status.status = 'STALED'
             status.save()
 

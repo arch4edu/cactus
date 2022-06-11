@@ -19,7 +19,7 @@ def recursively_fail(dependency_graph, reversed_dependency_graph, pkgbase, calle
         del dependency_graph[pkgbase]
         status = Status.objects.get(key=pkgbase)
         if status.status == 'STALED':
-            status.status = 'ERROR'
+            status.status = 'FAILED'
             status.detail = f'Dependency issue: {caller} .'
             status.save()
         if pkgbase in reversed_dependency_graph:
@@ -81,7 +81,7 @@ if __name__ == '__main__':
             logger.error(f'Failed to load %s', pkgbase)
             traceback.print_exc()
 
-    failed = [i.key for i in Status.objects.filter(status='ERROR')]
+    failed = [i.key for i in Status.objects.filter(status='FAILED')]
     for i in failed:
         recursively_fail(dependency_graph, reversed_dependency_graph, i)
 

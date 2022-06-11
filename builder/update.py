@@ -20,7 +20,7 @@ if __name__ == '__main__':
         status.status = 'BUILT'
         status.detail = ''
     else:
-        status.status = 'ERROR'
+        status.status = 'FAILED'
         status.detail = 'Build failed.'
     status.save()
 
