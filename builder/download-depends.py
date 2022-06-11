@@ -42,10 +42,10 @@ if __name__ == '__main__':
         except:
             logger.warning(f'Failed to download {key} from workflow. Downloading {pkgname} with pacman ...')
             try:
-                run(['pacman', '--config', 'pacman/pacman.conf', '--dbpath', 'pacman/db', '--gpgdir', 'pacman/gnupg', '--cachedir', depends, '-Swdd', pkgname])
+                run(['pacman', '--config', 'pacman/pacman.conf', '--dbpath', 'pacman/db', '--gpgdir', 'pacman/gnupg', '--cachedir', depends, '--noconfirm', '-Swdd', pkgname])
                 continue
             except:
-                raise Exception('Failed to download {key}/{pkgname}.')
+                raise Exception(f'Failed to download {key}/{pkgname}.')
 
         packages = [i for i in Path('.').glob('*.pkg.tar.zst')]
 
