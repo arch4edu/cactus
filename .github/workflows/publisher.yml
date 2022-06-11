@@ -1,8 +1,8 @@
 name: Publisher
 
 on:
-  #schedule:
-  #  - cron: '5 * * * *'
+  schedule:
+    - cron: '5 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -48,33 +48,28 @@ jobs:
           repository: petronny/djangorm
           path: djangorm
 
-      - name: Export config and keys
+      - name: Export config
         id: config
         run: |
           python -m cactus.common.config
-          python -m cactus.publisher.config
-          python -m cactus.publisher.export-keys
-          gpg --import gpg.key
-          chmod 400 ssh.key
 
-      - name: Configure GitHub CLI
-        run: |
-          echo ${{ steps.config.outputs.github_token }} | gh auth login --with-token
+      - uses: actions/checkout@master
+        with:
+          repository: ${{ steps.config.outputs.github_pages_repository }}
+          path: pages
+          token: ${{ steps.config.outputs.github_token }}
 
-      - name: Prepare repository
+      - name: Configure git
         run: |
-          mkdir repository
-          mkdir cache
-          sshfs -p ${{ steps.config.outputs.publisher_port }} -o IdentityFile=$(realpath ssh.key) \
-          -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-          ${{ steps.config.outputs.publisher_username }}@${{ steps.config.outputs.publisher_host }}:\
-          ${{ steps.config.outputs.publisher_path }} repository
-          for arch in ${{ steps.config.outputs.pacman_archs }}
-          do
-            mkdir -p repository/$arch cache/$arch
-          done
+          git config --global --add safe.directory $(realpath pages)
+          cd pages
+          git config user.email ${{ steps.config.outputs.email_address }}
+          git config user.name ${{ steps.config.outputs.email_name }}
 
-      - name: Download, sign and upload built packages
+      - name: Update pages
         run: |
-          python -m cactus.publisher.upload
-          rsync -rlptDvP cache/* repository
+          python -m cactus.publisher.update-pages
+          cd pages
+          git add index.md
+          git commit --amend -m "[$(date)] auto update"
+          git push -f

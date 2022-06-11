@@ -43,7 +43,7 @@ if __name__ == '__main__':
 
         for package in packages:
             if 'COLON' in package.name:
-                package.rename(package.name.replace('COLON', ':'))
+                package = package.rename(package.name.replace('COLON', ':'))
 
             run(['gpg', '--pinentry-mode', 'loopback', '--passphrase', '', '--detach-sign', '--', package])
 

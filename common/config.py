@@ -2,6 +2,7 @@
 from .. import config
 
 print(f'::set-output name=github_repository::%s' % config['github']['repository'])
+print(f'::set-output name=github_pages_repository::%s' % config['github']['pages'])
 print(f'::set-output name=github_token::%s' % config['github']['token'])
 print(f'::set-output name=pacman_repository::%s' % config['pacman']['repository'])
 print(f'::set-output name=pacman_keyring_repository::%s' % config['pacman']['keyring_repository'])
