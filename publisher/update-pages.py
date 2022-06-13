@@ -5,6 +5,7 @@ if __name__ == '__main__':
     import json
     import logging
     import shutil
+    import time
     from pathlib import Path
     from tornado.log import enable_pretty_logging
     from tornado.options import options
@@ -16,13 +17,14 @@ if __name__ == '__main__':
     enable_pretty_logging(options=options, logger=logger)
 
     lines = []
-    lines.append('Build status')
+    lines.append('<script src="./time.js"></script>')
+    lines.append(f'Build status (Last update:<script type="text/javascript">localize({time.time()});</script>)')
     lines.append('')
     lines.append('|Package|Status|Detail|Workflow|Timestamp|')
     lines.append('|:------|:-----|:-----|:-------|:--------|')
     url_prefix = 'https://github.com/arch4edu/cactus/actions/runs/'
     for record in Status.objects.all():
-        lines.append(f'|{record.key}|{record.status}|{record.detail}|[{record.workflow}]({url_prefix}{record.workflow})|{record.timestamp}|')
+        lines.append(f'|{record.key}|{record.status}|{record.detail}|[{record.workflow}]({url_prefix}{record.workflow})|<script type="text/javascript">localize({int(record.timestamp.timestamp())});</script>|')
     lines.append('')
     lines.append('<script src="https://unpkg.com/tablefilter@latest/dist/tablefilter/tablefilter.js"></script>')
     lines.append('<script src="./table.js"></script>')
