@@ -70,6 +70,6 @@ jobs:
         run: |
           python -m cactus.publisher.update-pages
           cd pages
-          git add index.md
-          git commit --amend -m "[$(date)] auto update"
+          git add index.md || exit 0
+          git commit -m "[$(date)] auto update"
           git push -f
