@@ -19,11 +19,11 @@ if __name__ == '__main__':
     if build_status == 'built':
         status.status = 'BUILT'
         status.detail = ''
+        for record in Version.objects.filter(key__startswith=key):
+            record.oldver = record.newver
+            record.save()
     else:
         status.status = 'FAILED'
         status.detail = 'Build failed.'
     status.save()
 
-    for record in Version.objects.filter(key__startswith=key):
-        record.oldver = record.newver
-        record.save()
