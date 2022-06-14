@@ -15,12 +15,16 @@ recv-gpg-keys
 
 # Build the package
 build_prefix=$(yq -r .build_prefix cactus.yaml)
+makechrootpkg_args=$(yq -r .makechrootpkg_args cactus.yaml)
+[ "$makechrootpkg_args" = "null" ] && unset makechrootpkg_args
+makepkg_args=$(yq -r .makepkg_args cactus.yaml)
+[ "$makepkg_args" = "null" ] && unset makepkg_args
 for i in $(find depends -name "*.pkg.tar.zst")
 do
 	depends="$depends -I $i"
 done
 depends=${depends# }
-eval $build_prefix-build -- $depends -- --noprogressbar
+eval $build_prefix-build -- $depends $makechrootpkg_args -- $makepkg_args --noprogressbar
 
 # Post build
 post_build=$(yq -r '.post_build' cactus.yaml)
