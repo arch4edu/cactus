@@ -116,10 +116,13 @@ if __name__ == '__main__':
             else:
                 cactus['group'] = resources['default']
         if resources[cactus['group']]['used'] < resources[cactus['group']]['total']:
-            status = Status.objects.get(key=i)
-            logger.info('Building %s', i)
+            try:
+                status = Status.objects.get(key=i)
+            except:
+                logger.warn('Cannot find %s in database. Skipping', i)
+            logger.info('Schedule to build %s', i)
             github_actions.build(i)
-            status.status = 'BUILDING'
+            status.status = 'SCHEDULED'
             status.detail = cactus['group']
             status.save()
             resources[cactus['group']]['used'] += 1

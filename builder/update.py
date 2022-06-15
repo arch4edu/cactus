@@ -22,6 +22,8 @@ if __name__ == '__main__':
         for record in Version.objects.filter(key__startswith=key):
             record.oldver = record.newver
             record.save()
+    elif build_status == 'building':
+        status.status = 'BUILDING'
     else:
         status.status = 'FAILED'
         status.detail = 'Build failed.'

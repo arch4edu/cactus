@@ -56,6 +56,9 @@ jobs:
         id: config
         run: python -m cactus.common.config
 
+      - name: Update status
+        run: python -m cactus.builder.update ${{ github.event.inputs.pkgbase }} building ${{ github.run_id}}
+
       - uses: actions/checkout@master
         with:
           repository: ${{ steps.config.outputs.github_repository }}

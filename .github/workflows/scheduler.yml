@@ -1,8 +1,6 @@
 name: Scheduler
 
 on:
-  schedule:
-    - cron: '* * * * *'
   workflow_dispatch:
 
 jobs:
@@ -36,7 +34,7 @@ jobs:
       - name: Install runtime dependencies
         run: |
           pacman -Syu --noconfirm
-          pacman -S --noconfirm --needed python-django python-mysqlclient python-pygithub python-tornado python-yaml
+          pacman -S --noconfirm --needed git python-django python-mysqlclient python-pygithub python-tornado python-yaml
 
       - uses: actions/checkout@master
         with:
@@ -58,4 +56,13 @@ jobs:
 
       - name: Scheduling
         run: |
-          python -m cactus.scheduler.schedule repository
+          for i in $(seq 36)
+          do
+            (cd repository; git pull --rebase)
+            python -m cactus.scheduler.schedule repository
+            sleep 300
+          done
+
+      - name: Start a new scheduler
+        #if: ${{ always() }}
+        run: python -m cactus.scheduler.refresh
