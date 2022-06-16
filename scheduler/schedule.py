@@ -17,11 +17,14 @@ def add_edge(graph, source, target):
 def recursively_fail(dependency_graph, reversed_dependency_graph, pkgbase, caller=None):
     if pkgbase in dependency_graph:
         del dependency_graph[pkgbase]
-        status = Status.objects.get(key=pkgbase)
-        if status.status == 'STALED':
-            status.status = 'FAILED'
-            status.detail = f'Dependency issue: {caller} .'
-            status.save()
+        try:
+            status = Status.objects.get(key=pkgbase)
+            if status.status == 'STALED':
+                status.status = 'FAILED'
+                status.detail = f'Dependency issue: {caller} .'
+                status.save()
+        except:
+            pass
         if pkgbase in reversed_dependency_graph:
             for i in reversed_dependency_graph[pkgbase]:
                 recursively_fail(dependency_graph, reversed_dependency_graph, i, caller=pkgbase)
@@ -30,10 +33,13 @@ def recursively_skip(dependency_graph, reversed_dependency_graph, pkgbase, calle
     if pkgbase in dependency_graph:
         if caller:
             del dependency_graph[pkgbase]
-            status = Status.objects.get(key=pkgbase)
-            if status.status == 'STALED':
-                status.detail = f'Waiting for dependency: {caller} .'
-                status.save()
+            try:
+                status = Status.objects.get(key=pkgbase)
+                if status.status == 'STALED':
+                    status.detail = f'Waiting for dependency: {caller} .'
+                    status.save()
+            except:
+                pass
         else:
             caller = pkgbase
         if pkgbase in reversed_dependency_graph:
