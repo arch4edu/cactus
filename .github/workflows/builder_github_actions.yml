@@ -169,3 +169,6 @@ jobs:
           else
             python -m cactus.builder.update ${{ github.event.inputs.pkgbase }} error ${{ github.run_id}}
           fi
+
+      - name: Clean up cache
+        run: pacman -Sc --noconfirm
