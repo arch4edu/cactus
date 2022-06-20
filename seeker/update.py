@@ -39,10 +39,11 @@ if __name__ == '__main__':
         except Status.DoesNotExist:
             status = Status(key=key)
 
-        if status.status != 'FAILED' and record.newver == 'FAILED':
+        if record.newver == 'FAILED':
             status.status = 'FAILED'
             status.detail = 'nvchecker failed'
             status.save()
+            continue
         if status.status in ['', 'PUBLISHED']:
             status.status = 'STALED'
             status.save()

@@ -75,11 +75,13 @@ if __name__ == '__main__':
             pkgbase = str(i.parent)[len(str(repository))+1:]
             with open(i) as f:
                 cactus = yaml.safe_load(f)
-            if not 'depends' in cactus:
+            depends = cactus['depends'] if 'depends' in cactus else []
+            depends += cactus['makedepends'] if 'makedepends' in cactus else []
+            if len(depends) == 0:
                 add_edge(dependency_graph, pkgbase, 'dummy')
                 add_edge(reversed_dependency_graph, 'dummy', pkgbase)
             else:
-                for j in cactus['depends']:
+                for j in depends:
                     add_edge(dependency_graph, pkgbase, j)
                     add_edge(reversed_dependency_graph, j, pkgbase)
             logger.debug(f'Loaded %s', pkgbase)
@@ -95,7 +97,7 @@ if __name__ == '__main__':
     for i in staled:
         recursively_skip(dependency_graph, reversed_dependency_graph, i)
 
-    building = [i.key for i in Status.objects.filter(status='BUILDING')]
+    building = [i.key for i in Status.objects.filter(status='BUILDING')] + [i.key for i in Status.objects.filter(status='SCHEDULED')]
     for i in building:
         recursively_skip(dependency_graph, reversed_dependency_graph, i)
 
@@ -132,4 +134,4 @@ if __name__ == '__main__':
             status.detail = cactus['group']
             status.save()
             resources[cactus['group']]['used'] += 1
-            logger.info('%s: %d / %d', group, resources[cactus['group']]['used'], resources[group]['total'])
+            logger.info('%s: %d / %d', group, resources[cactus['group']]['used'], resources[cactus['group']]['total'])

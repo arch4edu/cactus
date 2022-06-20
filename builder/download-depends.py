@@ -1,5 +1,28 @@
 #!/bin/python
 
+def load_depends(repository, pkgbase, key='depends'):
+    with open(repository / pkgbase / 'cactus.yaml') as f:
+        cactus = yaml.safe_load(f)
+    if not key in cactus:
+        return []
+    else:
+        return cactus[key]
+
+def resolve_depends(repository, pkgbase, result, key='depends'):
+    for i in load_depends(repository, pkgbase, key=key):
+        if type(i) is dict:
+            pkgbase, pkgname = list(i.keys())[0], list(i.values())[0]
+            if not (pkgbase, pkgname) in result:
+                result.append((pkgbase, pkgname))
+                if not 'recursive' in i or i['recursive']:
+                    result = resolve_depends(repository, pkgbase, result) 
+        else:
+            pkgbase, pkgname = i, i.split('/')[-1]
+            if not (pkgbase, pkgname) in result:
+                result.append((pkgbase, pkgname))
+                result = resolve_depends(repository, pkgbase, result) 
+    return result
+
 if __name__ == '__main__':
     import sys
     import json
@@ -17,35 +40,29 @@ if __name__ == '__main__':
     logger = logging.getLogger()
     enable_pretty_logging(options=options, logger=logger)
 
-    directory = Path(sys.argv[1])
-    with open(directory / 'cactus.yaml') as f:
-        cactus = yaml.safe_load(f)
+    repository = Path(sys.argv[1])
+    pkgbase = sys.argv[2]
 
-    if not 'depends' in cactus:
-        sys.exit()
+    all_depends = []
+    all_depends = resolve_depends(repository, pkgbase, all_depends)
+    all_depends = resolve_depends(repository, pkgbase, all_depends, 'makedepends')
 
-    depends = directory / 'depends'
+    depends = repository / pkgbase / 'depends'
     depends.mkdir(exist_ok=True)
 
-    for i in cactus['depends']:
-
-        if type(i) is tuple:
-            key, pkgname = i
-        else:
-            key, pkgname = i, i.split('/')[-1]
-
+    for pkgbase, pkgname in all_depends:
         try:
             connection.connect()
-            workflow = Status.objects.get(key=key).workflow
-            logger.info(f'Downloading {key} from {workflow} ...')
+            workflow = Status.objects.get(key=pkgbase).workflow
+            logger.info(f'Downloading {pkgbase} from {workflow} ...')
             run(f"gh run download {workflow} -n {workflow}.package -D ..".split(' '), cwd='cactus')
         except:
-            logger.warning(f'Failed to download {key} from workflow. Downloading {pkgname} with pacman ...')
+            logger.warning(f'Failed to download {pkgbase} from workflow. Downloading {pkgname} with pacman ...')
             try:
                 run(['pacman', '--config', 'pacman/pacman.conf', '--dbpath', 'pacman/db', '--gpgdir', 'pacman/gnupg', '--cachedir', depends, '--noconfirm', '-Swdd', pkgname])
                 continue
             except:
-                raise Exception(f'Failed to download {key}/{pkgname}.')
+                raise Exception(f'Failed to download {pkgbase}/{pkgname}.')
 
         packages = [i for i in Path('.').glob('*.pkg.tar.zst')]
 
@@ -56,10 +73,10 @@ if __name__ == '__main__':
 
             _pkgname = '-'.join(package.name.split('-')[:-3])
             if _pkgname == pkgname:
-                move(package, depends)
+                move(package, depends / package.name)
                 matched = True
             else:
                 remove(package)
 
         if not matched:
-            raise Exception(f'No package named {pkgname} in {key}.')
+            raise Exception(f'No package named {pkgname} in {pkgbase}.')

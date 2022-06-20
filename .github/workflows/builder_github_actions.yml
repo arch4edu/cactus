@@ -117,7 +117,7 @@ jobs:
 
       - name: Download dependencies
         run:
-          python -m cactus.builder.download-depends repository/${{ github.event.inputs.pkgbase }}
+          python -m cactus.builder.download-depends repository ${{ github.event.inputs.pkgbase }}
 
       - name: Build
         id: build
