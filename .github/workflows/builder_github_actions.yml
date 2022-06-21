@@ -172,3 +172,7 @@ jobs:
 
       - name: Clean up cache
         run: pacman -Sc --noconfirm
+
+      - name: Show disk space
+        if: ${{ always() }}
+        run: df -h
