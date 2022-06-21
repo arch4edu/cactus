@@ -16,6 +16,7 @@ jobs:
       options: --privileged
       volumes:
         - /sys/fs/cgroup:/sys/fs/cgroup
+        - /mnt:/mnt
     env:
       CACTUS_CONFIG: ${{ secrets.CACTUS_CONFIG }}
 

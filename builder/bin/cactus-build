@@ -24,7 +24,7 @@ do
 	depends="$depends -I $i"
 done
 depends=${depends# }
-eval $build_prefix-build -- $depends $makechrootpkg_args -- $makepkg_args --noprogressbar
+eval $build_prefix-build -r /mnt -- $depends $makechrootpkg_args -- $makepkg_args --noprogressbar
 
 # Post build
 post_build=$(yq -r '.post_build' cactus.yaml)
