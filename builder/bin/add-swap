@@ -1,0 +1,25 @@
+#!/bin/sh
+#https://github.com/pierotofy/set-swap-space/blob/master/action.yml
+
+# Swap space report before modification
+echo "Memory and swap:"
+free -h
+echo
+swapon --show
+echo
+
+# Set swap
+SWAP_FILE=$(realpath ~/swap)
+#sudo swapoff $SWAP_FILE
+#sudo rm -f $SWAP_FILE
+sudo fallocate -l $1 $SWAP_FILE
+sudo chmod 600 $SWAP_FILE
+sudo mkswap $SWAP_FILE
+sudo swapon $SWAP_FILE
+
+# Swap space report after modification
+echo "Memory and swap:"
+free -h
+echo
+swapon --show
+echo
