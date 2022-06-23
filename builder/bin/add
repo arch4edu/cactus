@@ -1,0 +1,12 @@
+#!/bin/sh
+output="$1+=("
+
+shift
+for i in $@
+do
+	output="$output\"$i\" "
+done
+
+output="${output% })"
+
+echo $output >> PKGBUILD
