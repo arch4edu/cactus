@@ -1,8 +1,15 @@
 #!/bin/python
 import os
+import logging
 import yaml
 from pathlib import Path
 from djangorm import DjangORM
+from tornado.log import enable_pretty_logging
+from tornado.options import options
+
+options.logging = 'debug'
+logger = logging.getLogger()
+enable_pretty_logging(options=options, logger=logger)
 
 file = Path(__file__).parent / 'config.local.yaml'
 if not file.exists():

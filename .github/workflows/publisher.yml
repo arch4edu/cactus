@@ -5,6 +5,8 @@ on:
     - cron: '5 * * * *'
   workflow_dispatch:
 
+concurrency: publisher
+
 jobs:
 
   publish:
@@ -37,7 +39,7 @@ jobs:
       - name: Install runtime dependencies
         run: |
           pacman -Syu --noconfirm
-          pacman -S --noconfirm --needed git github-cli python-django python-mysqlclient python-pygithub python-tornado python-yaml sshfs rsync
+          pacman -S --noconfirm --needed git github-cli openssh python-django python-mysqlclient python-pygithub python-tornado python-yaml rsync
 
       - uses: actions/checkout@master
         with:
@@ -53,13 +55,30 @@ jobs:
         run: |
           python -m cactus.common.config
 
+      - name: Export publisher config and keys
+        id: publisher_config
+        run: |
+          echo -n "${{ secrets.CACTUS_PUBLISHER_GPG_KEY }}" | base64 -d > gpg.key
+          echo "${{ secrets.CACTUS_PUBLISHER_SSH_KEY }}" | install -Dm400 /dev/stdin /root/.ssh/ssh_key
+          gpg --import gpg.key
+          python -m cactus.publisher.config
+
+      - name: Configure GitHub CLI
+        run: echo ${{ steps.config.outputs.github_token }} | gh auth login --with-token
+
       - uses: actions/checkout@master
         with:
           repository: ${{ steps.config.outputs.github_pages_repository }}
           path: pages
           token: ${{ steps.config.outputs.github_token }}
 
-      - name: Configure git
+      - name: Publish pacakges
+        env:
+          REMOTE_PATH: ${{ steps.publisher_config.outputs.path }}
+        run:
+          python -m cactus.publisher.publish
+
+      - name: Configure pages
         run: |
           git config --global --add safe.directory $(realpath pages)
           cd pages

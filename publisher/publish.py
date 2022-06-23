@@ -1,36 +1,24 @@
 #!/bin/python
 import os
-import subprocess
 from django.db import connection
 
-def run(command, **kwargs):
-    subprocess.run(command, check=True, **kwargs)
-
-def symlink(source, target):
-    try:
-        os.symlink(source, target)
-    except FileExistsError:
-        os.remove(target)
-        os.symlink(source, target)
-
 if __name__ == '__main__':
+    import time
     import sys
     import json
     import logging
     import shutil
     from pathlib import Path
-    from tornado.log import enable_pretty_logging
-    from tornado.options import options
-    from .. import config
+    from .. import config, logger
+    from ..common.util import run, symlink
     from ..models import Status, Version
-
-    options.logging = 'debug'
-    logger = logging.getLogger()
-    enable_pretty_logging(options=options, logger=logger)
 
     repository = Path('repository')
 
     for record in Status.objects.filter(status='BUILT'):
+        if not repository.exists():
+            run(['rsync', '-avP', '--exclude', '*.pkg*', f'repository:{os.environ["REMOTE_PATH"]}/*', repository])
+
         workflow = record.workflow
         logger.info(f'Downloading {record.key} from {workflow}')
         try:
@@ -55,7 +43,8 @@ if __name__ == '__main__':
             shutil.move(package.parent / f'{package.name}.sig' , repository / arch / f'{package.name}.sig')
 
             db = repository / arch / f"{config['pacman']['repository']}.db.tar.gz"
-            subprocess.run(['repo-add', db, repository / arch / package.name])
+            run(['repo-add', db, repository / arch / package.name])
+            time.sleep(1)
 
             if arch == 'any':
                 for arch in config['pacman']['archs'].split(' '):
@@ -63,8 +52,10 @@ if __name__ == '__main__':
                     symlink(Path('..') / 'any' / f'{package.name}.sig', repository / arch / f'{package.name}.sig')
 
                     db = repository / arch / f"{config['pacman']['repository']}.db.tar.gz"
-                    subprocess.run(['repo-add', db, repository / arch / package.name])
+                    run(['repo-add', db, repository / arch / package.name])
+                    time.sleep(1)
 
+            run(['sh', '-c', f'rsync -avP repository/* repository:{os.environ["REMOTE_PATH"]}'])
             logger.info('Published %s', package.name)
 
         connection.connect()

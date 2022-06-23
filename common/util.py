@@ -4,7 +4,7 @@ import shutil
 import subprocess
 
 def run(command, **kwargs):
-    subprocess.run(command, check=True, **kwargs)
+    return subprocess.run(command, check=True, **kwargs)
 
 remove = os.remove
 move = shutil.move
