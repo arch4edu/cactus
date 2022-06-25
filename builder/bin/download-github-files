@@ -3,11 +3,12 @@ set -e
 repo=$1
 path=$2
 
-sources=$(wget -q -O - https://api.github.com/repos/$repo/contents/$path | jq -r '.[] | select(.type=="file") | .name')
+json=$(wget -q -O - https://api.github.com/repos/$repo/contents/$path)
+[ $(echo $json | grep -Pz '^\[' -c) -eq 1 ] && sources=$(echo $json | jq -r '.[] | select(.type=="file") | .download_url') || sources=$(echo $json | jq -r 'select(.type=="file") | .download_url')
 
 for i in $sources
 do
 	echo Downloading $i
-	wget -q -O $i https://raw.githubusercontent.com/$1/master/$2/$i
-	git add $i
+	FILE=$(curl -sOJL -w "%{filename_effective}" $i)
+	git add $FILE
 done
