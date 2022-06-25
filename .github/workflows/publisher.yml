@@ -91,4 +91,4 @@ jobs:
           cd pages
           git add index.md
           git commit -m "[$(date)] auto update" || exit 0
-          git push -f
+          git push

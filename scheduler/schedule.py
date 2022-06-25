@@ -119,8 +119,8 @@ if __name__ == '__main__':
         with open(repository / i / 'cactus.yaml') as f:
             cactus = yaml.safe_load(f)
         if not 'group' in cactus:
-            if 'armv6h' in i or 'armv7h' in i or 'aarch64' in i:
-                cactus['group'] = 'arm'
+            if 'aarch64' in i:
+                cactus['group'] = 'aarch64'
             else:
                 cactus['group'] = resources['default']
         if resources[cactus['group']]['used'] < resources[cactus['group']]['total']:
@@ -129,9 +129,9 @@ if __name__ == '__main__':
             except:
                 logger.warn('Cannot find %s in database. Skipping', i)
             logger.info('Schedule to build %s', i)
-            github_actions.build(i)
+            github_actions.build(i, cactus['group'])
             status.status = 'SCHEDULED'
             status.detail = cactus['group']
             status.save()
             resources[cactus['group']]['used'] += 1
-            logger.info('%s: %d / %d', group, resources[cactus['group']]['used'], resources[cactus['group']]['total'])
+            logger.info('%s: %d / %d', cactus['group'], resources[cactus['group']]['used'], resources[cactus['group']]['total'])

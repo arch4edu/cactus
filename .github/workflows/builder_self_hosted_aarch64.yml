@@ -1,0 +1,167 @@
+name: Builder (Self-hosted aarch64)
+
+on:
+  workflow_dispatch:
+    inputs:
+      pkgbase:
+        description: 'Path to pkgbase'
+        required: true
+
+jobs:
+
+  build:
+    runs-on: ARM64
+    container:
+      image: arch4edu/archlinuxarm
+      options: --privileged
+      volumes:
+        - /mnt:/mnt
+        - /mnt:/var/cache/pacman
+    env:
+      CACTUS_CONFIG: ${{ secrets.CACTUS_CONFIG }}
+
+    steps:
+      - uses: actions/checkout@master
+        with:
+          path: cactus
+
+      - uses: actions/checkout@master
+        with:
+          repository: petronny/djangorm
+          path: djangorm
+
+      - name: Install runtime dependencies
+        run: |
+          mkdir -p /mnt/sync /var/lib/pacman
+          rm -rf /var/lib/pacman/sync
+          ln -sf /mnt/sync /var/lib/pacman/sync
+          pacman-key --init
+          pacman-key --populate archlinuxarm
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm --needed base-devel devtools-alarm dbus git github-cli jq wget zsh pyalpm python-django python-mysqlclient python-lxml python-requests python-setuptools python-toposort python-tornado python-yaml python-toml yq zsh
+
+      - name: Export configurations
+        id: config
+        run: python -m cactus.common.config
+
+      - name: Update status
+        run: python -m cactus.builder.update ${{ github.event.inputs.pkgbase }} building ${{ github.run_id}}
+
+      - uses: actions/checkout@master
+        with:
+          repository: ${{ steps.config.outputs.github_repository }}
+          path: repository
+          token: ${{ steps.config.outputs.github_token }}
+
+      - uses: actions/checkout@master
+        with:
+          repository: petronny/cactus
+          path: cactus
+
+      - uses: actions/checkout@master
+        with:
+          repository: ${{ steps.config.outputs.pacman_keyring_repository }}
+          path: pacman/keyring
+
+      - uses: actions/checkout@master
+        with:
+          repository: ${{ steps.config.outputs.pacman_mirrorlist_repository }}
+          path: pacman/mirrorlist
+
+      - name: Configure makepkg
+        run: |
+          sed -e "s|MAKEFLAGS=.*|MAKEFLAGS=-j$(nproc)|" -e '/^PKGEXT/s/\.pkg\.tar\.xz/.pkg.tar.zst/' -i /etc/makepkg.conf
+          cp /etc/makepkg.conf /usr/share/devtools/makepkg-x86_64.conf
+          dbus-uuidgen > /etc/machine-id
+          mkdir -p makepkg
+          useradd -g wheel -d $(realpath makepkg) -m makepkg
+          echo "%wheel ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          chown -R makepkg:root repository makepkg
+
+      - name: Configure pacman repository
+        run: |
+          mkdir -p pacman/db
+          cd pacman
+          cp keyring/* /usr/share/pacman/keyrings/
+          pacman-key --gpgdir gnupg --init
+          pacman-key --gpgdir gnupg --populate ${{ steps.config.outputs.pacman_repository }}
+          echo [options] > pacman.conf
+          pacman-conf | grep '^Architecture' >> pacman.conf
+          echo [${{ steps.config.outputs.pacman_repository }}] >> pacman.conf
+          sed 's/#//' mirrorlist/*mirrorlist* >> pacman.conf
+          pacman -Sy --config pacman.conf --dbpath db
+
+      - name: Configure git
+        run: |
+          git config --global --add safe.directory $(realpath repository)
+          cd repository
+          git config user.email ${{ steps.config.outputs.email_address }}
+          git config user.name ${{ steps.config.outputs.email_name }}
+
+      - name: Configure GitHub CLI
+        run: echo ${{ steps.config.outputs.github_token }} | gh auth login --with-token
+
+      - name: Add path
+        run: echo "$(realpath cactus/builder/bin)" >> $GITHUB_PATH
+
+      - name: Download dependencies
+        run:
+          python -m cactus.builder.download-depends repository ${{ github.event.inputs.pkgbase }}
+
+      - name: Build
+        id: build
+        run: |
+          cd repository/${{ github.event.inputs.pkgbase }}
+          su makepkg -c cactus-build | tee build.log
+          if [ $(grep -c '==> Running checkpkg' build.log) -gt 0 ]
+          then
+            echo ::set-output name=result::built
+          else
+            echo ::set-output name=result::error
+          fi
+
+      - name: Fix package name
+        if: ${{ steps.build.outputs.result == 'built' }}
+        run: |
+          cd repository/${{ github.event.inputs.pkgbase }}
+          for i in *.pkg.tar.zst
+          do
+            [ $(echo $i | grep : -c) -gt 0 ] && mv $i $(echo $i | sed 's/:/COLON/g') || continue
+          done
+
+      - name: Upload build log
+        uses: actions/upload-artifact@master
+        if: ${{ always() }}
+        with:
+          name: ${{ github.run_id }}.log
+          path: repository/${{ github.event.inputs.pkgbase }}/build.log
+
+      - name: Upload package
+        uses: actions/upload-artifact@master
+        with:
+          name: ${{ github.run_id }}.package
+          path: repository/${{ github.event.inputs.pkgbase }}/*.pkg.tar.zst
+
+      - name: Push changes
+        if: ${{ steps.build.outputs.result == 'built' }}
+        run: |
+          cd repository/${{ github.event.inputs.pkgbase }}
+          git-commit || exit
+          git-push
+
+      - name: Update status
+        if: ${{ always() }}
+        run: |
+          if [ "${{ steps.build.outputs.result }}" = "built" ]
+          then
+            python -m cactus.builder.update ${{ github.event.inputs.pkgbase }} built ${{ github.run_id}}
+          else
+            python -m cactus.builder.update ${{ github.event.inputs.pkgbase }} error ${{ github.run_id}}
+          fi
+
+      - name: Clean up cache
+        run: pacman -Sc --noconfirm
+
+      - name: Show disk space
+        if: ${{ always() }}
+        run: df -h
