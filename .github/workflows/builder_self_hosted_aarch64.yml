@@ -91,12 +91,9 @@ jobs:
           sed 's/#//' mirrorlist/*mirrorlist* >> pacman.conf
           pacman -Sy --config pacman.conf --dbpath db
 
-      - name: Configure git
-        run: |
-          git config --global --add safe.directory $(realpath repository)
-          cd repository
-          git config user.email ${{ steps.config.outputs.email_address }}
-          git config user.name ${{ steps.config.outputs.email_name }}
+      - uses: petronny/git-config-user@master
+        with:
+          path: repository
 
       - name: Configure GitHub CLI
         run: echo ${{ steps.config.outputs.github_token }} | gh auth login --with-token
@@ -111,6 +108,7 @@ jobs:
       - name: Build
         id: build
         run: |
+          git config --global --add safe.directory $(realpath repository)
           cd repository/${{ github.event.inputs.pkgbase }}
           su makepkg -c cactus-build | tee build.log
           if [ $(grep -c '==> Running checkpkg' build.log) -gt 0 ]
@@ -146,7 +144,6 @@ jobs:
         if: ${{ steps.build.outputs.result == 'built' }}
         run: |
           cd repository/${{ github.event.inputs.pkgbase }}
-          git-commit || exit
           git-push
 
       - name: Update status
