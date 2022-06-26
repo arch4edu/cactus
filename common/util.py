@@ -8,6 +8,7 @@ def run(command, **kwargs):
 
 remove = os.remove
 move = shutil.move
+rmtree = shutil.rmtree
 
 def symlink(source, target):
     try:

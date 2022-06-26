@@ -34,7 +34,7 @@ if __name__ == '__main__':
     from tornado.options import options
     from .. import config
     from ..models import Status
-    from ..common.util import run, move, remove
+    from ..common.util import run, move, remove, rmtree
 
     options.logging = 'debug'
     logger = logging.getLogger()
@@ -48,7 +48,9 @@ if __name__ == '__main__':
     all_depends = resolve_depends(repository, pkgbase, all_depends, 'makedepends')
 
     depends = repository / pkgbase / 'depends'
-    depends.mkdir(exist_ok=True)
+    if depends.exists():
+        rmtree(depends)
+    depends.mkdir()
 
     for pkgbase, pkgname in all_depends:
         try:

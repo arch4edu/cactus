@@ -30,4 +30,4 @@ eval $build_prefix-build -r /mnt -- $depends $makechrootpkg_args -- $makepkg_arg
 post_build=$(yq -r '.post_build' cactus.yaml)
 [ $(echo $post_build | wc -l) -gt 1 ] && post_build=$(echo $post_build | jq -r '.[]')
 eval $post_build
-rm -f .cactus_filelist
+rm -f .cactus_filelist depends
