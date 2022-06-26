@@ -15,8 +15,8 @@ jobs:
       image: arch4edu/archlinuxarm
       options: --privileged
       volumes:
-        - /mnt:/mnt
-        - /mnt:/var/cache/pacman
+        - /build:/mnt
+        - /build:/var/cache/pacman
     env:
       CACTUS_CONFIG: ${{ secrets.CACTUS_CONFIG }}
 
