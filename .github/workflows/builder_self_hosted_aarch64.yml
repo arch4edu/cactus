@@ -11,6 +11,7 @@ jobs:
 
   build:
     runs-on: ARM64
+    timeout-minutes: 4320
     container:
       image: arch4edu/archlinuxarm
       options: --privileged
@@ -157,7 +158,10 @@ jobs:
           fi
 
       - name: Clean up cache
-        run: pacman -Sc --noconfirm
+        run: |
+          pacman -Sc --noconfirm
+          cd repository
+          git clean -fx
 
       - name: Show disk space
         if: ${{ always() }}
