@@ -36,6 +36,7 @@ jobs:
           mkdir -p /mnt/sync /var/lib/pacman
           rm -rf /var/lib/pacman/sync
           ln -sf /mnt/sync /var/lib/pacman/sync
+          [ -f /mnt/mirrorlist ] && cp /mnt/mirrorlist /etc/pacman.d/
           pacman -Syu --noconfirm
           pacman -S --noconfirm --needed base-devel devtools dbus git github-cli jq wget zsh pyalpm python-django python-mysqlclient python-lxml python-requests python-setuptools python-toposort python-tornado python-yaml python-toml yq zsh
 
