@@ -4,16 +4,11 @@ if __name__ == '__main__':
     import os
     import sys
     import json
-    import logging
     from datetime import datetime, timedelta
-    from tornado.log import enable_pretty_logging
-    from tornado.options import options
     from django.db.models import F
+    from pathlib import Path
+    from .. import logger
     from ..models import Status, Version
-
-    options.logging = 'debug'
-    logger = logging.getLogger()
-    enable_pretty_logging(options=options, logger=logger)
 
     lines = open('nvchecker.log').readlines()
 
@@ -32,11 +27,17 @@ if __name__ == '__main__':
 
     logger.info('Marking staled and error')
 
+    repository = Path(sys.argv[1])
     for record in Version.objects.exclude(newver__exact=F('oldver')):
         key = record.key[:record.key.find(':')]
+        if not (repository / key).exists():
+            record.delete()
+            logger.warn('Removed %s', key)
         try:
             status = Status.objects.get(key=key)
         except Status.DoesNotExist:
+            if not (repository / key).exists():
+                continue
             status = Status(key=key)
 
         if record.newver == 'FAILED':

@@ -63,4 +63,4 @@ jobs:
         run: nvchecker --logger both -c nvchecker.toml | tee nvchecker.log
 
       - name: Update database
-        run: python -m cactus.seeker.update
+        run: python -m cactus.seeker.update repository
