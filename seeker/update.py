@@ -30,15 +30,16 @@ if __name__ == '__main__':
     repository = Path(sys.argv[1])
     for record in Version.objects.exclude(newver__exact=F('oldver')):
         key = record.key[:record.key.find(':')]
-        if not (repository / key).exists():
-            record.delete()
-            logger.warn('Removed %s', key)
         try:
             status = Status.objects.get(key=key)
         except Status.DoesNotExist:
-            if not (repository / key).exists():
-                continue
             status = Status(key=key)
+
+        if not (repository / key).exists():
+            logger.warn('Removed %s', key)
+            record.delete()
+            status.delete()
+            continue
 
         if record.newver == 'FAILED':
             status.status = 'FAILED'
