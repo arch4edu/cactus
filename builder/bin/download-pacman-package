@@ -1,0 +1,6 @@
+#!/bin/sh
+mkdir -p depends
+for i in $@
+do
+	sudo pacman --noconfirm --cachedir depends -Swdd $i
+done
