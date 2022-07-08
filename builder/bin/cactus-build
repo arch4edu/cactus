@@ -1,33 +1,60 @@
 #!/bin/zsh
-set -ex
+set -e
 
-# Pre build
-pre_build=$(yq -r '.pre_build' cactus.yaml)
-[ $(echo $pre_build | wc -l) -gt 1 ] && pre_build=$(echo $pre_build | jq -r '.[]')
-eval $pre_build
-ls > .cactus_filelist
+_eval(){
+	echo $@
+	eval $@
+}
 
-# PKGBUILD fixes
-sed -e '/^PKGEXT=/d' -e '/^groups=(/d' -i PKGBUILD
+pre_build(){
+	pre_build=$(yq -r '.pre_build' cactus.yaml)
+	[ $(echo $pre_build | wc -l) -gt 1 ] && pre_build=$(echo $pre_build | jq -r '.[]')
+	_eval $pre_build
+	ls > .cactus_filelist
+	# PKGBUILD fixes
+	sed -e '/^PKGEXT=/d' -e '/^groups=(/d' -i PKGBUILD
 
-# Recieve GPG keys
-recv-gpg-keys
+	# Recieve GPG keys
+	recv-gpg-keys
+}
 
-# Build the package
-build_prefix=$(yq -r .build_prefix cactus.yaml)
-makechrootpkg_args=$(yq -r .makechrootpkg_args cactus.yaml)
-[ "$makechrootpkg_args" = "null" ] && unset makechrootpkg_args
-makepkg_args=$(yq -r .makepkg_args cactus.yaml)
-[ "$makepkg_args" = "null" ] && unset makepkg_args
-for i in $(find depends -name "*.pkg.tar.zst")
-do
-	depends="$depends -I $i"
-done
-depends=${depends# }
-eval $build_prefix-build -r /mnt -- $depends $makechrootpkg_args -- $makepkg_args --noprogressbar
+post_build(){
+	post_build=$(yq -r '.post_build' cactus.yaml)
+	[ $(echo $post_build | wc -l) -gt 1 ] && post_build=$(echo $post_build | jq -r '.[]')
+	_eval $post_build
+	rm -f .cactus_filelist
+}
 
-# Post build
-post_build=$(yq -r '.post_build' cactus.yaml)
-[ $(echo $post_build | wc -l) -gt 1 ] && post_build=$(echo $post_build | jq -r '.[]')
-eval $post_build
-rm -f .cactus_filelist depends
+set_cpu(){
+	total=$(nproc)
+	cpus=$(yq -r '.cpus' cactus.yaml)
+	if [ "$cpus" = "null" ]
+	then
+		sudo sed -e "s/#\?MAKEFLAGS=.*/MAKEFLAGS=-j${total}/" -i /etc/makepkg.conf
+	else
+		sudo sed -e "s/#\?MAKEFLAGS=.*/MAKEFLAGS=-j${cpus}/" -i /etc/makepkg.conf
+		sed -n '/processor.*:.*3/q;p' /proc/cpuinfo > cpuinfo
+		sudo mount --bind cpuinfo /proc/cpuinfo
+		cpus=$(seq $total | shuf -n $cpus | tr '\n' ',')
+		echo taskset -c ${cpus%,}
+	fi
+}
+
+build(){
+	build_prefix=$(yq -r .build_prefix cactus.yaml)
+	makechrootpkg_args=$(yq -r .makechrootpkg_args cactus.yaml)
+	[ "$makechrootpkg_args" = "null" ] && unset makechrootpkg_args
+	makepkg_args=$(yq -r .makepkg_args cactus.yaml)
+	[ "$makepkg_args" = "null" ] && unset makepkg_args
+	for i in $(find depends -name "*.pkg.tar.zst")
+	do
+		depends="$depends -I $i"
+	done
+	depends=${depends# }
+	#_eval $(set_cpu) $build_prefix-build -r /mnt -- $depends $makechrootpkg_args -- $makepkg_args --noprogressbar
+	_eval $build_prefix-build -r /mnt -- $depends $makechrootpkg_args -- $makepkg_args --noprogressbar
+}
+
+pre_build
+build
+post_build
