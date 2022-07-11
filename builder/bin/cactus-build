@@ -7,10 +7,10 @@ _eval(){
 }
 
 pre_build(){
-	pre_build=$(yq -r '.pre_build' cactus.yaml)
-	[ $(echo $pre_build | wc -l) -gt 1 ] && pre_build=$(echo $pre_build | jq -r '.[]')
-	_eval $pre_build
+	_pre_build=$(yq -r '.pre_build' cactus.yaml)
+	_eval $_pre_build
 	ls > .cactus_filelist
+
 	# PKGBUILD fixes
 	sed -e '/^PKGEXT=/d' -e '/^groups=(/d' -i PKGBUILD
 
@@ -19,9 +19,8 @@ pre_build(){
 }
 
 post_build(){
-	post_build=$(yq -r '.post_build' cactus.yaml)
-	[ $(echo $post_build | wc -l) -gt 1 ] && post_build=$(echo $post_build | jq -r '.[]')
-	_eval $post_build
+	_post_build=$(yq -r '.post_build' cactus.yaml)
+	_eval $_post_build
 	rm -f .cactus_filelist
 }
 
