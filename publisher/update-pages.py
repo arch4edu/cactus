@@ -26,7 +26,7 @@ if __name__ == '__main__':
     for record in Status.objects.all():
         lines.append(f'|{record.key}|{record.status}|{record.detail}|[{record.workflow}]({url_prefix}{record.workflow})|<script type="text/javascript">localize({int(record.timestamp.timestamp())});</script>|')
     lines.append('')
-    lines.append('<script src="https://unpkg.com/tablefilter@latest/dist/tablefilter/tablefilter.js"></script>')
+    lines.append('<script src="./tablefilter/tablefilter.js"></script>')
     lines.append('<script src="./table.js"></script>')
 
     with open('pages/index.md', 'w') as f:
