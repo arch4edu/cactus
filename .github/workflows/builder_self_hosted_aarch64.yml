@@ -71,7 +71,7 @@ jobs:
 
       - name: Configure makepkg
         run: |
-          sed -e "s|MAKEFLAGS=.*|MAKEFLAGS=-j$(nproc)|" -e '/^PKGEXT/s/\.pkg\.tar\.xz/.pkg.tar.zst/' -i /etc/makepkg.conf
+          sed -e "s/#\?MAKEFLAGS=.*/MAKEFLAGS=-j$(nproc)/" -e '/^PKGEXT/s/\.pkg\.tar\.xz/.pkg.tar.zst/' -i /etc/makepkg.conf
           cp /etc/makepkg.conf /usr/share/devtools/makepkg-x86_64.conf
           dbus-uuidgen > /etc/machine-id
           mkdir -p makepkg

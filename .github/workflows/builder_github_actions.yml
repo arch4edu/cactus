@@ -82,7 +82,7 @@ jobs:
 
       - name: Configure makepkg
         run: |
-          sed -e "s|MAKEFLAGS=.*|MAKEFLAGS=-j$(nproc)|" -i /etc/makepkg.conf
+          sed -e "s/#\?MAKEFLAGS=.*/MAKEFLAGS=-j$(nproc)/" -i /etc/makepkg.conf
           dbus-uuidgen --ensure=/etc/machine-id
           mkdir makepkg
           useradd -g wheel -d $(realpath makepkg) -m makepkg
