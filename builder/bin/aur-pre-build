@@ -1,3 +1,4 @@
 #!/bin/sh
 git-rm-all
 download-aur-snapshot $1
+ls > .cactus_filelist

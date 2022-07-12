@@ -3,4 +3,6 @@ for i in $(cat .cactus_filelist)
 do
 	git add $i
 done
+rm -f .cactus_filelist
+
 git-commit
