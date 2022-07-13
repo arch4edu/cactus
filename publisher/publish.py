@@ -22,7 +22,8 @@ if __name__ == '__main__':
         workflow = record.workflow
         logger.info(f'Downloading {record.key} from {workflow}')
         try:
-            run(f"gh run download {workflow} -n {workflow}.package -D ..".split(' '), cwd='cactus')
+            run(['gh', 'run', 'watch', workflow, '-R', config['github']['cactus']])
+            run(['gh', 'run', 'download', workflow, '-n', f'{workflow}.package', '-R', config['github']['cactus']])
         except:
             logger.error('Failed to download %s', record.key)
             continue

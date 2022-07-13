@@ -56,8 +56,10 @@ if __name__ == '__main__':
         try:
             connection.connect()
             workflow = Status.objects.get(key=pkgbase).workflow
+
             logger.info(f'Downloading {pkgbase} from {workflow} ...')
-            run(f"gh run download {workflow} -n {workflow}.package -D ..".split(' '), cwd='cactus')
+            run(['gh', 'run', 'watch', workflow, '-R', config['github']['cactus']])
+            run(['gh', 'run', 'download', workflow, '-n', f'{workflow}.package', '-R', config['github']['cactus']])
         except:
             logger.warning(f'Failed to download {pkgbase} from workflow. Downloading {pkgname} with pacman ...')
             try:
