@@ -78,12 +78,9 @@ jobs:
         run:
           python -m cactus.publisher.publish
 
-      - name: Configure pages
-        run: |
-          git config --global --add safe.directory $(realpath pages)
-          cd pages
-          git config user.email ${{ steps.config.outputs.email_address }}
-          git config user.name ${{ steps.config.outputs.email_name }}
+      - uses: petronny/git-config-user@master
+        with:
+          path: pages
 
       - name: Update pages
         run: |

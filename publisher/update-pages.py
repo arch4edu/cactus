@@ -22,9 +22,19 @@ if __name__ == '__main__':
     lines.append('')
     lines.append('|Package|Status|Detail|Workflow|Timestamp|')
     lines.append('|:------|:-----|:-----|:-------|:--------|')
-    url_prefix = 'https://github.com/arch4edu/cactus/actions/runs/'
+
+    url_prefix = f"https://github.com/{config['github']['cactus']}/actions/runs/"
+    aur_prefix = 'https://aur.archlinux.org/pkgbase/'
     for record in Status.objects.all():
-        lines.append(f'|{record.key}|{record.status}|{record.detail}|[{record.workflow}]({url_prefix}{record.workflow})|<script type="text/javascript">localize({int(record.timestamp.timestamp())});</script>|')
+        data = ['']
+        data.append(f'[{record.key}]({aur_prefix}{record.key.split("/")[-1]})')
+        data.append(record.status)
+        data.append(record.detail)
+        data.append(f'[{record.workflow}]({url_prefix}{record.workflow})')
+        data.append(f'<script type="text/javascript">localize({int(record.timestamp.timestamp())});</script>')
+        data.append('')
+        lines.append('|'.join(data))
+
     lines.append('')
     lines.append('<script src="./tablefilter/tablefilter.js"></script>')
     lines.append('<script src="./table.js"></script>')
