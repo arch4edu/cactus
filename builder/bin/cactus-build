@@ -14,7 +14,7 @@ pre_build(){
 	sed -e '/^PKGEXT=/d' -e '/^groups=(/d' -i PKGBUILD
 
 	# Recieve GPG keys
-	recv-gpg-keys
+	recv-gpg-keys || :
 }
 
 post_build(){
