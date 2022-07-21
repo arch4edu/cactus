@@ -1,7 +1,6 @@
 #!/bin/bash -e
 
-. /usr/share/makepkg/util.sh
-. ./PKGBUILD
+validpgpkeys=$(makepkg --printsrcinfo | sed -n '/validpgpkeys =/s/.*validpgpkeys = \([0-9A-F]*\)$/\1/p')
 for key in ${validpgpkeys[@]}; do
   echo "Receiving key ${key}..."
   # first check if the key is already received; if not try it twice
