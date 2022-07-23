@@ -22,8 +22,8 @@ if __name__ == '__main__':
         aliases = yaml.safe_load(f)
 
     config = Options()
-    config.__config__.oldver = '/dev/null'
-    config.__config__.newver = 'newver.json'
+    config.__config__.oldver = 'nvchecker/oldver.json'
+    config.__config__.newver = 'nvchecker/newver.json'
 
     for i in repository.rglob('cactus.yaml'):
         try:

@@ -19,19 +19,19 @@ jobs:
         id: time
         run: echo "::set-output name=time::$(date +%F-%T)"
 
-      - name: Set up pacman db cache
-        uses: actions/cache@master
-        with:
-          path: /var/lib/pacman/sync
-          key: pacman-db-x86_64-${{ steps.time.outputs.time }}
-          restore-keys: pacman-db-x86_64-
-
       - name: Set up pacman package cache
         uses: actions/cache@master
         with:
           path: /var/cache/pacman/pkg
           key: pacman-package-x86_64-${{ steps.time.outputs.time }}
           restore-keys: pacman-package-x86_64-
+
+      - name: Set up nvchecker cache
+        uses: actions/cache@master
+        with:
+          path: nvchecker
+          key: nvchecker-${{ steps.time.outputs.time }}
+          restore-keys: nvchecker-
 
       - name: Install runtime dependencies
         run: |
@@ -60,7 +60,10 @@ jobs:
         run: python -m cactus.seeker.collect repository
 
       - name: Run nvchecker
-        run: nvchecker --logger both -c nvchecker.toml | tee nvchecker.log
+        run: |
+          mkdir -p nvchecker
+          [ -f nvchecker/newver.json ] && mv nvchecker/newver.json nvchecker/oldver.json
+          nvchecker --logger both -c nvchecker.toml | tee nvchecker.log
 
       - name: Update database
         run: python -m cactus.seeker.update repository

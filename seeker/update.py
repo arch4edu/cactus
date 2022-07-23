@@ -15,6 +15,8 @@ if __name__ == '__main__':
     logger.info('Updating newver')
     for line in lines:
         line = json.loads(line)
+        if line['event'] == 'up-to-date':
+            continue
         try:
             record = Version.objects.get(key=line['name'])
         except Version.DoesNotExist:
@@ -55,5 +57,5 @@ if __name__ == '__main__':
 
         if status.status == 'STALED':
             logger.debug(f'{key}: {record.oldver} -> {record.newver}')
-        else:
-            logger.debug(f'{key}: {status.status} on {status.timestamp}')
+        #else:
+        #    logger.debug(f'{key}: {status.status} on {status.timestamp}')
