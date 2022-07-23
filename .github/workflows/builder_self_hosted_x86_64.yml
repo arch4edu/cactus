@@ -14,7 +14,7 @@ jobs:
     timeout-minutes: 4320
     container:
       image: archlinux
-      options: --privileged --memory-swap -1
+      options: --privileged --memory-swap -1 --memory-swappiness 100
       volumes:
         - /sys/fs/cgroup:/sys/fs/cgroup
         - /build:/mnt
