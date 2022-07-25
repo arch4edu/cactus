@@ -107,7 +107,7 @@ jobs:
           path: repository
 
       - name: Configure GitHub CLI
-        run: echo ${{ steps.config.outputs.github_token }} | gh auth login --with-token
+        run: echo ${{ secrets.GITHUB_TOKEN }} | gh auth login --with-token
 
       - name: Add path
         run: echo "$(realpath cactus/builder/bin)" >> $GITHUB_PATH
