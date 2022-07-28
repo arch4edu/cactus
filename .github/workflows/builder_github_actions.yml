@@ -41,11 +41,13 @@ jobs:
       - uses: actions/checkout@master
         with:
           path: cactus
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/checkout@master
         with:
           repository: petronny/djangorm
           path: djangorm
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install runtime dependencies
         run: |
@@ -67,18 +69,15 @@ jobs:
 
       - uses: actions/checkout@master
         with:
-          repository: petronny/cactus
-          path: cactus
-
-      - uses: actions/checkout@master
-        with:
           repository: ${{ steps.config.outputs.pacman_keyring_repository }}
           path: pacman/keyring
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/checkout@master
         with:
           repository: ${{ steps.config.outputs.pacman_mirrorlist_repository }}
           path: pacman/mirrorlist
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure makepkg
         run: |
