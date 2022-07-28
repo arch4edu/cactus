@@ -41,13 +41,12 @@ jobs:
       - uses: actions/checkout@master
         with:
           path: cactus
-          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: actions/checkout@master
-        with:
-          repository: petronny/djangorm
-          path: djangorm
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Downloading djangorm
+        run: |
+          mkdir -p djangorm
+          cd djangorm
+          curl -sL https://github.com/petronny/djangorm/archive/refs/heads/master.tar.gz | tar zxvf - --strip-components=1
 
       - name: Install runtime dependencies
         run: |
