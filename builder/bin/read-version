@@ -1,0 +1,8 @@
+#!/bin/sh
+
+epoch=$(grep -m 1 -P "\tepoch = " .SRCINFO | cut -d' ' -f3)
+[ -n "$epoch" ] && epoch="$epoch:"
+pkgver=$(grep -m 1 -P "\tpkgver = " .SRCINFO | cut -d' ' -f3)
+pkgrel=$(grep -m 1 -P "\tpkgrel = " .SRCINFO | cut -d' ' -f3)
+
+echo "$epoch$pkgver-$pkgrel"

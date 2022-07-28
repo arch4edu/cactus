@@ -28,6 +28,7 @@ if __name__ == '__main__':
     import json
     import logging
     import yaml
+    from datetime import datetime, timedelta
     from django.db import connection
     from pathlib import Path
     from tornado.log import enable_pretty_logging
@@ -53,34 +54,46 @@ if __name__ == '__main__':
     depends.mkdir()
 
     for pkgbase, pkgname in all_depends:
+        connection.connect()
         try:
-            connection.connect()
-            workflow = Status.objects.get(key=pkgbase).workflow
-
-            logger.info(f'Downloading {pkgbase} from {workflow} ...')
-            run(['gh', 'run', 'watch', workflow, '-R', config['github']['cactus']])
-            run(['gh', 'run', 'download', workflow, '-n', f'{workflow}.package', '-R', config['github']['cactus']])
+            status = Status.objects.get(key=pkgbase)
         except:
-            logger.warning(f'Failed to download {pkgbase} from workflow. Downloading {pkgname} with pacman ...')
+            logger.warning('Cannot find {pkgbase} in the database.')
+            status = None
+
+        downloaded = False
+        if status is None or datetime.now() - status.timestamp > timedelta(days=1):
+            logger.info(f'Downloading {pkgname} with pacman ...')
             try:
                 run(['pacman', '--config', 'pacman/pacman.conf', '--dbpath', 'pacman/db', '--gpgdir', 'pacman/gnupg', '--cachedir', depends, '--noconfirm', '-Swdd', pkgname])
-                continue
+                downloaded = True
             except:
-                raise Exception(f'Failed to download {pkgbase}/{pkgname}.')
+                if status:
+                    logger.warning(f'Failed to download pkgname with pacman.')
+                else:
+                    raise(f'Failed to download pkgname with pacman.')
 
-        packages = [i for i in Path('.').glob('*.pkg.tar.zst')]
+        if not downloaded:
+            logger.info(f'Downloading {pkgname} from {pkgbase} in {status.workflow} ...')
+            try:
+                run(['gh', 'run', 'watch', status.workflow, '-R', config['github']['cactus']])
+                run(['gh', 'run', 'download', status.workflow, '-n', f'{status.workflow}.package', '-R', config['github']['cactus']])
+            except:
+                raise Exception(f'Failed to download {pkgname}.')
 
-        matched = False
-        for package in packages:
-            if 'COLON' in package.name:
-                package = package.rename(package.name.replace('COLON', ':'))
+            packages = [i for i in Path('.').glob('*.pkg.tar.zst')]
 
-            _pkgname = '-'.join(package.name.split('-')[:-3])
-            if _pkgname == pkgname:
-                move(package, depends / package.name)
-                matched = True
-            else:
-                remove(package)
+            matched = False
+            for package in packages:
+                if 'COLON' in package.name:
+                    package = package.rename(package.name.replace('COLON', ':'))
 
-        if not matched:
-            raise Exception(f'No package named {pkgname} in {pkgbase}.')
+                _pkgname = '-'.join(package.name.split('-')[:-3])
+                if _pkgname == pkgname:
+                    move(package, depends / package.name)
+                    matched = True
+                else:
+                    remove(package)
+
+            if not matched:
+                raise Exception(f'No package named {pkgname} in {pkgbase}.')
