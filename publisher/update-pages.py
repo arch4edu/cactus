@@ -18,7 +18,8 @@ if __name__ == '__main__':
 
     lines = []
     lines.append('<script src="./time.js"></script>')
-    lines.append(f'Build status (Last update:<script type="text/javascript">localize({time.time()});</script>)')
+    lines.append('# Build status')
+    lines.append(f'(Last update:<script type="text/javascript">localize({time.time()});</script>)')
     lines.append('')
     lines.append('|Package|Status|Detail|Workflow|Timestamp|')
     lines.append('|:------|:-----|:-----|:-------|:--------|')
