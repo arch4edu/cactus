@@ -19,9 +19,9 @@ def recursively_fail(dependency_graph, reversed_dependency_graph, pkgbase, calle
         del dependency_graph[pkgbase]
         try:
             status = Status.objects.get(key=pkgbase)
-            if status.status == 'STALED':
+            if caller and status.status == 'STALED':
                 status.status = 'FAILED'
-                status.detail = f'Dependency issue: {caller} .'
+                status.detail = f'Dependency issue: {caller}.'
                 status.save()
         except:
             pass
@@ -36,7 +36,7 @@ def recursively_skip(dependency_graph, reversed_dependency_graph, pkgbase, calle
             try:
                 status = Status.objects.get(key=pkgbase)
                 if status.status == 'STALED':
-                    status.detail = f'Waiting for dependency: {caller} .'
+                    status.detail = f'Waiting for dependency: {caller}.'
                     status.save()
             except:
                 pass
