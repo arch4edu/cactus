@@ -56,7 +56,7 @@ jobs:
 
       - name: Scheduling
         run: |
-          for i in $(seq 36)
+          for i in $(seq 66)
           do
             (cd repository; git pull --rebase)
             python -m cactus.scheduler.schedule repository

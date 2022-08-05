@@ -2,7 +2,7 @@ name: Seeker
 
 on:
   schedule:
-    - cron: '17 */6 * * *'
+    - cron: '17 */12 * * *'
   workflow_dispatch:
 
 jobs:
