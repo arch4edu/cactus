@@ -77,15 +77,3 @@ jobs:
           REMOTE_PATH: ${{ steps.publisher_config.outputs.path }}
         run:
           python -m cactus.publisher.publish
-
-      - uses: petronny/git-config-user@master
-        with:
-          path: pages
-
-      - name: Update pages
-        run: |
-          python -m cactus.publisher.update-pages
-          cd pages
-          git add index.md
-          git commit -m "[$(date)] auto update" || exit 0
-          git push
