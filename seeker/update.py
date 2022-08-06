@@ -51,11 +51,8 @@ if __name__ == '__main__':
         if status.status in ['', 'PUBLISHED']:
             status.status = 'STALED'
             status.save()
+            logger.debug(f'{key}: {record.oldver} -> {record.newver}')
         elif status.status == 'FAILED' and datetime.now() - status.timestamp > timedelta(days=1):
             status.status = 'STALED'
             status.save()
-
-        if status.status == 'STALED':
-            logger.debug(f'{key}: {record.oldver} -> {record.newver}')
-        #else:
-        #    logger.debug(f'{key}: {status.status} on {status.timestamp}')
+            logger.debug(f'{key}: try to rebuild {record.newver}')
