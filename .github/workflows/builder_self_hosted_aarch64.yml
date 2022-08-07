@@ -37,7 +37,10 @@ jobs:
           rm -rf /var/lib/pacman/sync
           ln -sf /mnt/sync /var/lib/pacman/sync
           pacman-key --init
+          [ ! -f /usr/share/pacman/keyrings/archlinuxarm.gpg ] && curl -L -o /usr/share/pacman/keyrings/archlinuxarm.gpg https://github.com/archlinuxarm/archlinuxarm-keyring/raw/master/archlinuxarm.gpg
+          [ ! -f /usr/share/pacman/keyrings/archlinuxarm-trusted ] && curl -L -o /usr/share/pacman/keyrings/archlinuxarm-trusted https://github.com/archlinuxarm/archlinuxarm-keyring/raw/master/archlinuxarm-trusted
           pacman-key --populate archlinuxarm
+          rm /usr/share/pacman/keyrings/archlinuxarm{.gpg,-trusted}
           pacman -Syu --noconfirm
           pacman -S --noconfirm --needed base-devel devtools-alarm dbus git github-cli jq wget zsh pyalpm python-django python-mysqlclient python-lxml python-requests python-setuptools python-toposort python-tornado python-yaml python-toml yq zsh
 
