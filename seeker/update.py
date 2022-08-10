@@ -38,7 +38,7 @@ if __name__ == '__main__':
             status = Status(key=key)
 
         if not (repository / key).exists():
-            logger.warn('Removed %s', key)
+            logger.warning('Removed %s', key)
             record.delete()
             status.delete()
             continue
