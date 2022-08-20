@@ -147,12 +147,4 @@ jobs:
             python -m cactus.builder.update ${{ github.event.inputs.pkgbase }} error ${{ github.run_id}}
           fi
 
-      - name: Clean up cache
-        run: |
-          pacman -Sc --noconfirm
-          cd repository
-          git clean -fx
-
-      - name: Show disk space
-        if: ${{ always() }}
-        run: df -h
+      - uses: arch4edu/cactus/actions/clean@main

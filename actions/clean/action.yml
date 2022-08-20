@@ -1,0 +1,15 @@
+name: "Clean up the system"
+runs:
+  using: "composite"
+  steps:
+    - if: ${{ always() }}
+      shell: bash -e {0}
+      run: |
+        df -h
+        echo
+        echo 'Cleaning ...'
+        pacman -Sc --noconfirm
+        cd repository
+        git clean -fx
+        echo
+        df -h
