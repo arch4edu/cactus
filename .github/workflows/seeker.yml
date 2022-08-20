@@ -15,16 +15,10 @@ jobs:
       CACTUS_CONFIG: ${{ secrets.CACTUS_CONFIG }}
 
     steps:
-      - name: Get time
-        id: time
-        run: echo "::set-output name=time::$(date +%F-%T)"
+      - uses: arch4edu/cactus/actions/upgrade-archlinux@main
 
-      - name: Set up pacman package cache
-        uses: actions/cache@master
-        with:
-          path: /var/cache/pacman/pkg
-          key: pacman-package-x86_64-${{ steps.time.outputs.time }}
-          restore-keys: pacman-package-x86_64-
+      - name: Install runtime dependencies
+        run: pacman -S --noconfirm --needed nvchecker python-django python-mysqlclient python-tqdm python-toml python-tornado python-yaml
 
       - name: Set up nvchecker cache
         uses: actions/cache@master
@@ -32,11 +26,6 @@ jobs:
           path: nvchecker
           key: nvchecker-${{ steps.time.outputs.time }}
           restore-keys: nvchecker-
-
-      - name: Install runtime dependencies
-        run: |
-          pacman -Syu --noconfirm
-          pacman -S --noconfirm --needed nvchecker python-django python-mysqlclient python-tqdm python-toml python-tornado python-yaml
 
       - uses: actions/checkout@master
         with:

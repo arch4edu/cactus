@@ -18,28 +18,10 @@ jobs:
       CACTUS_CONFIG: ${{ secrets.CACTUS_CONFIG }}
 
     steps:
-      - name: Get time
-        id: time
-        run: echo "::set-output name=time::$(date +%F-%T)"
-
-      - name: Set up pacman db cache
-        uses: actions/cache@master
-        with:
-          path: /var/lib/pacman/sync
-          key: pacman-db-x86_64-${{ steps.time.outputs.time }}
-          restore-keys: pacman-db-x86_64-
-
-      - name: Set up pacman package cache
-        uses: actions/cache@master
-        with:
-          path: /var/cache/pacman/pkg
-          key: pacman-package-x86_64-${{ steps.time.outputs.time }}
-          restore-keys: pacman-package-x86_64-
+      - uses: arch4edu/cactus/actions/upgrade-archlinux@main
 
       - name: Install runtime dependencies
-        run: |
-          pacman -Syu --noconfirm
-          pacman -S --noconfirm --needed git github-cli openssh python-django python-mysqlclient python-pygithub python-tornado python-yaml rsync
+        run: pacman -S --noconfirm --needed git github-cli openssh python-django python-mysqlclient python-pygithub python-tornado python-yaml rsync
 
       - uses: actions/checkout@master
         with:

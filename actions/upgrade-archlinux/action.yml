@@ -1,0 +1,24 @@
+name: "Upgrade archlinux"
+inputs:
+  path:
+    arch: 'Architecture'
+    required: false
+    default: 'x86_64'
+runs:
+  using: "composite"
+  steps:
+    - name: Get time
+      id: time
+      shell: bash -e {0}
+      run: echo "::set-output name=time::$(date +%F-%T)"
+
+    - name: Set up pacman package cache
+      uses: actions/cache@master
+      with:
+        path: /var/cache/pacman/pkg
+        key: pacman-package-x86_64-${{ steps.time.outputs.time }}
+        restore-keys: pacman-package-x86_64-
+
+    - name: Upgrade the system
+      shell: bash -e {0}
+      run: pacman -Syu --noconfirm

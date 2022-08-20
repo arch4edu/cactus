@@ -20,23 +20,10 @@ jobs:
       CACTUS_CONFIG: ${{ secrets.CACTUS_CONFIG }}
 
     steps:
-      - name: Get time
-        id: time
-        run: echo "::set-output name=time::$(date +%F-%T)"
+      - uses: arch4edu/cactus/actions/upgrade-archlinux@main
 
-      - name: Set up pacman db cache
-        uses: actions/cache@master
-        with:
-          path: /var/lib/pacman/sync
-          key: pacman-db-x86_64-${{ steps.time.outputs.time }}
-          restore-keys: pacman-db-x86_64-
-
-      - name: Set up pacman package cache
-        uses: actions/cache@master
-        with:
-          path: /var/cache/pacman/pkg
-          key: pacman-package-x86_64-${{ steps.time.outputs.time }}
-          restore-keys: pacman-package-x86_64-
+      - name: Install runtime dependencies
+        run: pacman -S --noconfirm --needed base-devel devtools dbus git github-cli jq wget zsh pyalpm python-django python-mysqlclient python-lxml python-requests python-setuptools python-toposort python-tornado python-yaml python-toml yq zsh
 
       - uses: actions/checkout@master
         with:
@@ -47,11 +34,6 @@ jobs:
           mkdir -p djangorm
           cd djangorm
           curl -sL https://github.com/petronny/djangorm/archive/refs/heads/master.tar.gz | tar zxvf - --strip-components=1
-
-      - name: Install runtime dependencies
-        run: |
-          pacman -Syu --noconfirm
-          pacman -S --noconfirm --needed base-devel devtools dbus git github-cli jq wget zsh pyalpm python-django python-mysqlclient python-lxml python-requests python-setuptools python-toposort python-tornado python-yaml python-toml yq zsh
 
       - name: Export configurations
         id: config
