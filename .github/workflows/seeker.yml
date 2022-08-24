@@ -16,6 +16,7 @@ jobs:
 
     steps:
       - uses: arch4edu/cactus/actions/upgrade-archlinux@main
+        id: init
 
       - name: Install runtime dependencies
         run: pacman -S --noconfirm --needed nvchecker python-django python-mysqlclient python-tqdm python-toml python-tornado python-yaml
@@ -24,7 +25,7 @@ jobs:
         uses: actions/cache@master
         with:
           path: nvchecker
-          key: nvchecker-${{ steps.time.outputs.time }}
+          key: nvchecker-${{ steps.init.outputs.time }}
           restore-keys: nvchecker-
 
       - uses: actions/checkout@master

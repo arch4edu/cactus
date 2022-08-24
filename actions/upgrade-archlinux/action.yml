@@ -4,6 +4,10 @@ inputs:
     arch: 'Architecture'
     required: false
     default: 'x86_64'
+outputs:
+  time:
+    description: "Current time"
+    value: ${{ steps.time.outputs.time }}
 runs:
   using: "composite"
   steps:
