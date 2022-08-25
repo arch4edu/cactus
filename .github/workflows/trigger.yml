@@ -19,6 +19,9 @@ jobs:
     steps:
       - uses: arch4edu/cactus/actions/upgrade-archlinux@main
 
+      - name: Install runtime dependencies
+        run: pacman -S --noconfirm --needed python-mysqlclient
+
       - uses: arch4edu/cactus/actions/setup-cactus@main
 
       - name: Update database
