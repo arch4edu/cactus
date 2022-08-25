@@ -1,0 +1,19 @@
+name: "Update status"
+inputs:
+  pkgbase:
+    description: 'pkgbase'
+    required: true
+  status:
+    description: 'Status'
+    required: true
+  workflow:
+    description: 'workflow'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - shell: bash -e {0}
+      run: |
+        status=${{ inputs.status }}
+        [ -z "${{ inputs.status }}" ] && status=failed
+        python -m cactus.builder.update ${{ inputs.pkgbase }} $status ${{ inputs.workflow }}

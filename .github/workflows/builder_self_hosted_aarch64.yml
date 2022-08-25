@@ -38,8 +38,11 @@ jobs:
         id: config
         run: python -m cactus.common.config
 
-      - name: Update status
-        run: python -m cactus.builder.update ${{ github.event.inputs.pkgbase }} building ${{ github.run_id}}
+      - uses: arch4edu/cactus/actions/update-status@main
+        with:
+          pkgbase: ${{ github.event.inputs.pkgbase }}
+          status: building
+          workflow: ${{ github.run_id }}
 
       - uses: actions/checkout@master
         with:
@@ -116,14 +119,11 @@ jobs:
           cd repository/${{ github.event.inputs.pkgbase }}
           git-push
 
-      - name: Update status
+      - uses: arch4edu/cactus/actions/update-status@main
         if: ${{ always() }}
-        run: |
-          if [ "${{ steps.build.outputs.result }}" = "built" ]
-          then
-            python -m cactus.builder.update ${{ github.event.inputs.pkgbase }} built ${{ github.run_id}}
-          else
-            python -m cactus.builder.update ${{ github.event.inputs.pkgbase }} error ${{ github.run_id}}
-          fi
+        with:
+          pkgbase: ${{ github.event.inputs.pkgbase }}
+          status: ${{ steps.build.outputs.result }}
+          workflow: ${{ github.run_id }}
 
       - uses: arch4edu/cactus/actions/clean@main
