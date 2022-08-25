@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
     for record in Status.objects.filter(status='BUILT'):
         if not repository.exists():
-            run(['rsync', '-avP', '--exclude', '*.pkg*', f'repository:{os.environ["REMOTE_PATH"]}/*', repository])
+            run(['rsync', '-avP', '--exclude', '*.pkg*', f'repository:{config["publisher"]["path"]}/*', repository])
 
         workflow = record.workflow
         logger.info(f'Downloading {record.key} from {workflow}')
@@ -56,7 +56,7 @@ if __name__ == '__main__':
                     run(['repo-add', db, repository / arch / package.name])
                     time.sleep(1)
 
-            run(['sh', '-c', f'rsync -avP repository/* repository:{os.environ["REMOTE_PATH"]}'])
+            run(['sh', '-c', f'rsync -avP repository/* repository:{config["publisher"]["path"]}'])
             logger.info('Published %s', package.name)
 
         connection.connect()

@@ -2,8 +2,6 @@
 from .. import config
 from ..common.util import run
 
-print(f'::set-output name=path::%s' % config['publisher']['path'])
-
 with open('/root/.ssh/known_hosts', 'w') as f:
     f.write(run(['ssh-keyscan', '-p', str(config['publisher']['port']), config['publisher']['host']], capture_output=True).stdout.decode('utf-8'))
 

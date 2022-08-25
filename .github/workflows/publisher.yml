@@ -20,7 +20,7 @@ jobs:
       - uses: arch4edu/cactus/actions/upgrade-archlinux@main
 
       - name: Install runtime dependencies
-        run: pacman -S --noconfirm --needed git github-cli openssh python-mysqlclient rsync
+        run: pacman -S --noconfirm --needed github-cli openssh python-mysqlclient rsync
 
       - uses: arch4edu/cactus/actions/setup-cactus@main
 
@@ -29,7 +29,6 @@ jobs:
         run: python -m cactus.common.config
 
       - name: Export publisher config and keys
-        id: publisher_config
         run: |
           echo -n "${{ secrets.CACTUS_PUBLISHER_GPG_KEY }}" | base64 -d > gpg.key
           echo "${{ secrets.CACTUS_PUBLISHER_SSH_KEY }}" | install -Dm400 /dev/stdin /root/.ssh/ssh_key
@@ -46,7 +45,4 @@ jobs:
           token: ${{ steps.config.outputs.github_token }}
 
       - name: Publish pacakges
-        env:
-          REMOTE_PATH: ${{ steps.publisher_config.outputs.path }}
-        run:
-          python -m cactus.publisher.publish
+        run: python -m cactus.publisher.publish
