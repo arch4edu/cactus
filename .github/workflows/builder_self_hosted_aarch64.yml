@@ -47,20 +47,11 @@ jobs:
           path: repository
           token: ${{ steps.config.outputs.github_token }}
 
-      - uses: actions/checkout@master
+      - uses: arch4edu/cactus/actions/config-pacman-repository@main
         with:
-          repository: petronny/cactus
-          path: cactus
-
-      - uses: actions/checkout@master
-        with:
-          repository: ${{ steps.config.outputs.pacman_keyring_repository }}
-          path: pacman/keyring
-
-      - uses: actions/checkout@master
-        with:
-          repository: ${{ steps.config.outputs.pacman_mirrorlist_repository }}
-          path: pacman/mirrorlist
+          pacman-repository: ${{ steps.config.outputs.pacman_repository }}
+          keyring-repository: ${{ steps.config.outputs.pacman_keyring_repository }}
+          mirrorlist-repository: ${{ steps.config.outputs.pacman_mirrorlist_repository }}
 
       - name: Configure makepkg
         run: |
@@ -71,19 +62,6 @@ jobs:
           useradd -g wheel -d $(realpath makepkg) -m makepkg
           echo "%wheel ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
           chown -R makepkg:root repository makepkg
-
-      - name: Configure pacman repository
-        run: |
-          mkdir -p pacman/db
-          cd pacman
-          cp keyring/* /usr/share/pacman/keyrings/
-          pacman-key --gpgdir gnupg --init
-          pacman-key --gpgdir gnupg --populate ${{ steps.config.outputs.pacman_repository }}
-          echo [options] > pacman.conf
-          pacman-conf | grep '^Architecture' >> pacman.conf
-          echo [${{ steps.config.outputs.pacman_repository }}] >> pacman.conf
-          sed 's/#//' mirrorlist/*mirrorlist* >> pacman.conf
-          pacman -Sy --config pacman.conf --dbpath db
 
       - uses: petronny/git-config-user@master
         with:
@@ -150,12 +128,4 @@ jobs:
             python -m cactus.builder.update ${{ github.event.inputs.pkgbase }} error ${{ github.run_id}}
           fi
 
-      - name: Clean up cache
-        run: |
-          pacman -Sc --noconfirm
-          cd repository
-          git clean -fx
-
-      - name: Show disk space
-        if: ${{ always() }}
-        run: df -h
+      - uses: arch4edu/cactus/actions/clean@main
