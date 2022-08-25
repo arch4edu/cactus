@@ -46,14 +46,7 @@ jobs:
           keyring-repository: ${{ steps.config.outputs.pacman_keyring_repository }}
           mirrorlist-repository: ${{ steps.config.outputs.pacman_mirrorlist_repository }}
 
-      - name: Configure makepkg
-        run: |
-          sed -e "s/#\?MAKEFLAGS=.*/MAKEFLAGS=-j$(nproc)/" -i /etc/makepkg.conf
-          dbus-uuidgen --ensure=/etc/machine-id
-          mkdir makepkg
-          useradd -g wheel -d $(realpath makepkg) -m makepkg
-          echo "%wheel ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-          chown -R makepkg:root repository makepkg
+      - uses: arch4edu/cactus/actions/config-makepkg@main
 
       - uses: petronny/git-config-user@master
         with:
@@ -72,7 +65,7 @@ jobs:
       - name: Build
         id: build
         run: |
-          git config --global --add safe.directory $(realpath repository)
+          chown -R makepkg:root repository
           cd repository/${{ github.event.inputs.pkgbase }}
           su makepkg -c cactus-build | tee build.log
           if [ $(grep -c '==> Running checkpkg' build.log) -gt 0 ]
