@@ -1,0 +1,24 @@
+name: "Upload package"
+inputs:
+  pkgbase:
+    description: 'pkgbase'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Fix package name
+      run: |
+        cd repository/${{ inputs.pkgbase }}
+        for i in *.pkg.tar.zst
+        do
+          [ $(echo $i | grep : -c) -gt 0 ] && mv $i $(echo $i | sed 's/:/COLON/g') || continue
+        done
+
+    - id: basename
+      shell: bash -e {0}
+      run: echo "::set-output name=basename::$(basename ${{ inputs.pkgbase }})"
+
+    - uses: actions/upload-artifact@master
+      with:
+        name: ${{ steps.basename.outputs.basename }}.package
+        path: repository/${{ inputs.pkgbase }}/*.pkg.tar.zst
