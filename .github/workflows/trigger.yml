@@ -19,17 +19,7 @@ jobs:
     steps:
       - uses: arch4edu/cactus/actions/upgrade-archlinux@main
 
-      - name: Install runtime dependencies
-        run: pacman -S --noconfirm --needed python-django python-mysqlclient python-tornado python-yaml
-
-      - uses: actions/checkout@master
-        with:
-          path: cactus
-
-      - uses: actions/checkout@master
-        with:
-          repository: petronny/djangorm
-          path: djangorm
+      - uses: arch4edu/cactus/actions/setup-cactus@main
 
       - name: Update database
         run: python -m cactus.seeker.trigger ${{ github.event.inputs.pkgbase }}

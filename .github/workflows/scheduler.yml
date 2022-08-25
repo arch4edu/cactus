@@ -16,25 +16,11 @@ jobs:
       - uses: arch4edu/cactus/actions/upgrade-archlinux@main
 
       - name: Install runtime dependencies
-        run: pacman -S --noconfirm --needed git python-django python-mysqlclient python-pygithub python-tornado python-yaml
+        run: pacman -S --noconfirm --needed git python-mysqlclient
 
-      - uses: actions/checkout@master
-        with:
-          path: cactus
+      - uses: arch4edu/cactus/actions/setup-cactus@main
 
-      - uses: actions/checkout@master
-        with:
-          repository: petronny/djangorm
-          path: djangorm
-
-      - name: Export config
-        id: config
-        run: python -m cactus.common.config
-
-      - uses: actions/checkout@master
-        with:
-          repository: ${{ steps.config.outputs.github_repository }}
-          path: repository
+      - uses: arch4edu/cactus/actions/checkout-repository@main
 
       - name: Scheduling
         run: |

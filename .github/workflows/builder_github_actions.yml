@@ -23,17 +23,9 @@ jobs:
       - uses: arch4edu/cactus/actions/upgrade-archlinux@main
 
       - name: Install runtime dependencies
-        run: pacman -S --noconfirm --needed base-devel devtools dbus git github-cli jq wget zsh pyalpm python-django python-mysqlclient python-lxml python-requests python-setuptools python-toposort python-tornado python-yaml python-toml yq zsh
+        run: pacman -S --noconfirm --needed base-devel devtools dbus git github-cli jq wget pyalpm python-mysqlclient yq zsh
 
-      - uses: actions/checkout@master
-        with:
-          path: cactus
-
-      - name: Downloading djangorm
-        run: |
-          mkdir -p djangorm
-          cd djangorm
-          curl -sL https://github.com/petronny/djangorm/archive/refs/heads/master.tar.gz | tar zxvf - --strip-components=1
+      - uses: arch4edu/cactus/actions/setup-cactus@main
 
       - name: Export configurations
         id: config

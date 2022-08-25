@@ -1,0 +1,22 @@
+name: "Set up cactus"
+runs:
+  using: "composite"
+  steps:
+    - name: Install runtime dependencies
+      shell: bash -e {0}
+      run: |
+        pacman -S --noconfirm --needed \
+          python-django \
+          python-pygithub \
+          python-toml \
+          python-tornado \
+          python-yaml
+
+    - uses: actions/checkout@master
+      with:
+        path: cactus
+
+    - uses: actions/checkout@master
+      with:
+        repository: petronny/djangorm
+        path: djangorm

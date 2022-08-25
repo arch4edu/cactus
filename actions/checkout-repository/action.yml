@@ -1,0 +1,13 @@
+name: "Checkout the repository"
+runs:
+  using: "composite"
+  steps:
+    - name: Export config
+      id: config
+      shell: bash -e {0}
+      run: python -m cactus.common.config
+
+    - uses: actions/checkout@master
+      with:
+        repository: ${{ steps.config.outputs.github_repository }}
+        path: repository

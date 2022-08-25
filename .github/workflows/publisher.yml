@@ -13,7 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: archlinux
-      options: --device /dev/fuse --cap-add SYS_ADMIN --security-opt apparmor:unconfined
     env:
       CACTUS_CONFIG: ${{ secrets.CACTUS_CONFIG }}
 
@@ -21,21 +20,13 @@ jobs:
       - uses: arch4edu/cactus/actions/upgrade-archlinux@main
 
       - name: Install runtime dependencies
-        run: pacman -S --noconfirm --needed git github-cli openssh python-django python-mysqlclient python-pygithub python-tornado python-yaml rsync
+        run: pacman -S --noconfirm --needed git github-cli openssh python-mysqlclient rsync
 
-      - uses: actions/checkout@master
-        with:
-          path: cactus
-
-      - uses: actions/checkout@master
-        with:
-          repository: petronny/djangorm
-          path: djangorm
+      - uses: arch4edu/cactus/actions/setup-cactus@main
 
       - name: Export config
         id: config
-        run: |
-          python -m cactus.common.config
+        run: python -m cactus.common.config
 
       - name: Export publisher config and keys
         id: publisher_config

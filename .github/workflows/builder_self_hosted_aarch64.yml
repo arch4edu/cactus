@@ -22,15 +22,6 @@ jobs:
       CACTUS_CONFIG: ${{ secrets.CACTUS_CONFIG }}
 
     steps:
-      - uses: actions/checkout@master
-        with:
-          path: cactus
-
-      - uses: actions/checkout@master
-        with:
-          repository: petronny/djangorm
-          path: djangorm
-
       - name: Install runtime dependencies
         run: |
           mkdir -p /mnt/sync /var/lib/pacman
@@ -39,7 +30,9 @@ jobs:
           pacman-key --init
           pacman-key --populate archlinuxarm
           pacman -Syu --noconfirm
-          pacman -S --noconfirm --needed base-devel devtools-alarm dbus git github-cli jq wget zsh pyalpm python-django python-mysqlclient python-lxml python-requests python-setuptools python-toposort python-tornado python-yaml python-toml yq zsh
+          pacman -S --noconfirm --needed base-devel devtools-alarm dbus git github-cli jq wget pyalpm python-mysqlclient yq zsh
+
+      - uses: arch4edu/cactus/actions/setup-cactus@main
 
       - name: Export configurations
         id: config

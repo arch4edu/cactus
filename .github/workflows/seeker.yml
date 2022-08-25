@@ -19,7 +19,9 @@ jobs:
         id: init
 
       - name: Install runtime dependencies
-        run: pacman -S --noconfirm --needed nvchecker python-django python-mysqlclient python-tqdm python-toml python-tornado python-yaml
+        run: pacman -S --noconfirm --needed nvchecker python-mysqlclient
+
+      - uses: arch4edu/cactus/actions/setup-cactus@main
 
       - name: Set up nvchecker cache
         uses: actions/cache@master
@@ -28,23 +30,7 @@ jobs:
           key: nvchecker-${{ steps.init.outputs.time }}
           restore-keys: nvchecker-
 
-      - uses: actions/checkout@master
-        with:
-          path: cactus
-
-      - uses: actions/checkout@master
-        with:
-          repository: petronny/djangorm
-          path: djangorm
-
-      - name: Export config
-        id: config
-        run: python -m cactus.common.config
-
-      - uses: actions/checkout@master
-        with:
-          repository: ${{ steps.config.outputs.github_repository }}
-          path: repository
+      - uses: arch4edu/cactus/actions/checkout-repository@main
 
       - name: Collecting cactus.yaml
         run: python -m cactus.seeker.collect repository
