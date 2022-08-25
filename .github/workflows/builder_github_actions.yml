@@ -64,18 +64,10 @@ jobs:
       - name: Download dependencies
         run: python -m cactus.builder.download-depends repository ${{ github.event.inputs.pkgbase }}
 
-      - name: Build
+      - uses: arch4edu/cactus/actions/build-package@main
         id: build
-        run: |
-          chown -R makepkg:root repository
-          cd repository/${{ github.event.inputs.pkgbase }}
-          su makepkg -c cactus-build | tee build.log
-          if [ $(grep -c '==> Running checkpkg' build.log) -gt 0 ]
-          then
-            echo ::set-output name=result::built
-          else
-            echo ::set-output name=result::error
-          fi
+        with:
+          pkgbase: ${{ github.event.inputs.pkgbase }}
 
       - uses: arch4edu/cactus/actions/upload-log@main
         with:

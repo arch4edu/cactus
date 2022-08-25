@@ -1,0 +1,24 @@
+name: "Upgrade archlinux"
+inputs:
+  pkgbase:
+    description: 'pkgbase'
+    required: true
+outputs:
+  result:
+    description: "Build result"
+    value: ${{ steps.build.outputs.result }}
+runs:
+  using: "composite"
+  steps:
+    - shell: bash -e {0}
+      id: build
+      run: |
+        chown -R makepkg:root repository
+        cd repository/${{ inputs.pkgbase }}
+        su makepkg -c cactus-build | tee build.log
+        if [ $(grep -c '==> Running checkpkg' build.log) -gt 0 ]
+        then
+          echo ::set-output name=result::built
+        else
+          echo ::set-output name=result::failed
+        fi
