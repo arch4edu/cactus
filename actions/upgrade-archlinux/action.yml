@@ -1,7 +1,7 @@
 name: "Upgrade archlinux"
 inputs:
-  path:
-    arch: 'Architecture'
+  arch:
+    description: 'Architecture'
     required: false
     default: 'x86_64'
 outputs:
@@ -20,8 +20,8 @@ runs:
       uses: actions/cache@master
       with:
         path: /var/cache/pacman/pkg
-        key: pacman-package-x86_64-${{ steps.time.outputs.time }}
-        restore-keys: pacman-package-x86_64-
+        key: pacman-package-${{ inputs.arch }}-${{ steps.time.outputs.time }}
+        restore-keys: pacman-package-${{ inputs.arch }}-
 
     - name: Upgrade the system
       shell: bash -e {0}
