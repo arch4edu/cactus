@@ -60,7 +60,6 @@ jobs:
 
       - name: Configure makepkg for archlinuxarm
         run: |
-          dbus-uuidgen > /etc/machine-id
           sed '/^PKGEXT/s/\.pkg\.tar\.xz/.pkg.tar.zst/' -i /etc/makepkg.conf
           cp /etc/makepkg.conf /usr/share/devtools/makepkg-x86_64.conf
 
