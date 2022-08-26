@@ -20,10 +20,11 @@ if __name__ == '__main__':
             run(['rsync', '-avP', '--exclude', '*.pkg*', f'repository:{config["publisher"]["path"]}/*', repository])
 
         workflow = record.workflow
+        basename = record.key.split('/')[-1]
         logger.info(f'Downloading {record.key} from {workflow}')
         try:
             run(['gh', 'run', 'watch', workflow, '-R', config['github']['cactus']])
-            run(['gh', 'run', 'download', workflow, '-n', f'{workflow}.package', '-R', config['github']['cactus']])
+            run(['gh', 'run', 'download', workflow, '-n', f'{basename}.package', '-R', config['github']['cactus']])
         except:
             logger.error('Failed to download %s', record.key)
             continue

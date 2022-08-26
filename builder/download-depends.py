@@ -75,9 +75,10 @@ if __name__ == '__main__':
 
         if not downloaded:
             logger.info(f'Downloading {pkgname} from {pkgbase} in {status.workflow} ...')
+            basename = status.key.split('/')[-1]
             try:
                 run(['gh', 'run', 'watch', status.workflow, '-R', config['github']['cactus']])
-                run(['gh', 'run', 'download', status.workflow, '-n', f'{status.workflow}.package', '-R', config['github']['cactus']])
+                run(['gh', 'run', 'download', status.workflow, '-n', f'{basename}.package', '-R', config['github']['cactus']])
             except:
                 raise Exception(f'Failed to download {pkgname}.')
 
