@@ -7,6 +7,7 @@ runs:
   using: "composite"
   steps:
     - name: Fix package name
+      shell: bash -e {0}
       run: |
         cd repository/${{ inputs.pkgbase }}
         for i in *.pkg.tar.zst
