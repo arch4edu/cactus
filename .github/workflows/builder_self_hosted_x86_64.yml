@@ -55,7 +55,7 @@ jobs:
           keyring-repository: ${{ steps.config.outputs.pacman_keyring_repository }}
           mirrorlist-repository: ${{ steps.config.outputs.pacman_mirrorlist_repository }}
 
-      - uses: arch4edu/cactus/actions/config-pacman-repository@main
+      - uses: arch4edu/cactus/actions/config-makepkg@main
 
       - uses: petronny/git-config-user@master
         with:
