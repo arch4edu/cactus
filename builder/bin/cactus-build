@@ -25,6 +25,7 @@ pre_build(){
 post_build(){
 	_post_build=$(yq -r '.post_build' cactus.yaml)
 	_eval $_post_build
+	echo 'Cactus has successfully built the package.'
 }
 
 set_cpu(){

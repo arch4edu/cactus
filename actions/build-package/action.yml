@@ -16,7 +16,7 @@ runs:
         chown -R makepkg:root repository
         cd repository/${{ inputs.pkgbase }}
         su makepkg -c cactus-build | tee build.log
-        if [ $(grep -c '==> Running checkpkg' build.log) -gt 0 ]
+        if [ $(grep -c 'Cactus has successfully built the package.' build.log) -gt 0 ]
         then
           echo ::set-output name=result::built
         else
