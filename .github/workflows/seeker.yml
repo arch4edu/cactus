@@ -28,7 +28,7 @@ jobs:
         with:
           path: nvchecker
           key: nvchecker-${{ steps.init.outputs.time }}
-          restore-keys: nvchecker-
+          restore-keys: nvchecker
 
       - uses: arch4edu/cactus/actions/checkout-repository@main
 
