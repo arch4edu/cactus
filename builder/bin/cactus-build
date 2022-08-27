@@ -7,11 +7,16 @@ _eval(){
 }
 
 pre_build(){
+	oldver=$(read-version)
+
 	_pre_build=$(yq -r '.pre_build' cactus.yaml)
 	_eval $_pre_build
 
 	# PKGBUILD fixes
 	sed -e '/^PKGEXT=/d' -e '/^groups=(/d' -i PKGBUILD
+
+	newver=$(read-version)
+	auto-bump-pkgrel "$oldver" "$newver"
 
 	# Recieve GPG keys
 	recv-gpg-keys || :

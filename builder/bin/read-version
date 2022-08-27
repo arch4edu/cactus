@@ -1,8 +1,13 @@
-#!/bin/sh
+#!/bin/zsh
 
-epoch=$(grep -m 1 -P "\tepoch = " .SRCINFO | cut -d' ' -f3)
+[ ! -f PKGBUILD ] && exit 0
+
+srcinfo=$(makepkg --printsrcinfo)
+
+epoch=$(echo $srcinfo | grep -m 1 -P "\tepoch = " | cut -d' ' -f3)
 [ -n "$epoch" ] && epoch="$epoch:"
-pkgver=$(grep -m 1 -P "\tpkgver = " .SRCINFO | cut -d' ' -f3)
-pkgrel=$(grep -m 1 -P "\tpkgrel = " .SRCINFO | cut -d' ' -f3)
+
+pkgver=$(echo $srcinfo | grep -m 1 -P "\tpkgver = " | cut -d' ' -f3)
+pkgrel=$(echo $srcinfo | grep -m 1 -P "\tpkgrel = " | cut -d' ' -f3)
 
 echo "$epoch$pkgver-$pkgrel"
