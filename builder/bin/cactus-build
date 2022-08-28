@@ -15,11 +15,12 @@ pre_build(){
 	# PKGBUILD fixes
 	sed -e '/^PKGEXT=/d' -e '/^groups=(/d' -i PKGBUILD
 
-	newver=$(read-version)
-	auto-bump-pkgrel "$oldver" "$newver"
-
 	# Recieve GPG keys
 	recv-gpg-keys || :
+
+	makepkg -A -od --noprepare
+	newver=$(read-version)
+	auto-bump-pkgrel "$oldver" "$newver"
 }
 
 post_build(){
