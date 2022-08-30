@@ -11,7 +11,7 @@ if __name__ == '__main__':
     from pathlib import Path
     from .. import config, logger
     from ..common.util import run, symlink
-    from ..models import Status, Version
+    from ..models import Status, Version, Package
 
     repository = Path('repository')
 
@@ -30,6 +30,11 @@ if __name__ == '__main__':
             continue
 
         packages = [i for i in Path('.').glob('*.pkg.tar.zst')]
+
+        if len(packages) > 0:
+            for package_record in Package.objects.filter(key=record.key):
+                package_record.age += 1
+                package_record.save()
 
         for package in packages:
             if 'COLON' in package.name:
@@ -58,6 +63,10 @@ if __name__ == '__main__':
                     time.sleep(1)
 
             run(['sh', '-c', f'rsync -avP repository/* repository:{config["publisher"]["path"]}'])
+
+            package_record = Package(key=record.key, package=package.name)
+            package_record.save()
+
             logger.info('Published %s', package.name)
 
         connection.connect()
