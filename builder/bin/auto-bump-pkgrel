@@ -10,7 +10,7 @@ echo 'The new version is not greater than the old version.'
 if [ $(vercmp "${newver%-*}" "${oldver%-*}") -eq 0 ]
 then
 	pkgrel=$(expr ${oldver#*-} + 1)
-	sed "s/^pkgrel=.*/pkgrel=${pkgrel}" -i PKGBUILD
+	sed "s/^pkgrel=.*/pkgrel=${pkgrel}/" -i PKGBUILD
 fi
 
 newver=$(read-version)
