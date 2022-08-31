@@ -23,18 +23,33 @@ if __name__ == '__main__':
         basename = record.key.split('/')[-1]
         logger.info(f'Downloading {record.key} from {workflow}')
         try:
-            run(['gh', 'run', 'watch', workflow, '-R', config['github']['cactus']])
             run(['gh', 'run', 'download', workflow, '-n', f'{basename}.package', '-R', config['github']['cactus']])
         except:
-            logger.error('Failed to download %s', record.key)
-            continue
+            try:
+                run(['gh', 'run', 'watch', workflow, '-R', config['github']['cactus']])
+                run(['gh', 'run', 'download', workflow, '-n', f'{basename}.package', '-R', config['github']['cactus']])
+            except:
+                logger.error('Failed to download %s', record.key)
+                continue
 
         packages = [i for i in Path('.').glob('*.pkg.tar.zst')]
 
         if len(packages) > 0:
             for package_record in Package.objects.filter(key=record.key):
                 package_record.age += 1
-                package_record.save()
+                if package_record.age > config["publisher"]["max-age"]:
+                    arch = package_record.name[:-12].split('-')[-1]
+                    oldfiles = []
+                    oldfiles.append(f'{config["publisher"]["path"]}/{arch}/{package_record.package}')
+                    oldfiles.append(oldfiles[-1] + '.sig')
+                    if arch == 'any':
+                        for arch in config['pacman']['archs'].split(' '):
+                            oldfiles.append(f'{config["publisher"]["path"]}/{arch}/{package_record.package}')
+                            oldfiles.append(oldfiles[-1] + '.sig')
+                    run(['ssh', 'repository', 'rm'] + oldfiles)
+                    package_record.delete()
+                else:
+                    package_record.save()
 
         for package in packages:
             if 'COLON' in package.name:

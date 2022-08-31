@@ -77,10 +77,13 @@ if __name__ == '__main__':
             logger.info(f'Downloading {pkgname} from {pkgbase} in {status.workflow} ...')
             basename = status.key.split('/')[-1]
             try:
-                run(['gh', 'run', 'watch', status.workflow, '-R', config['github']['cactus']])
                 run(['gh', 'run', 'download', status.workflow, '-n', f'{basename}.package', '-R', config['github']['cactus']])
             except:
-                raise Exception(f'Failed to download {pkgname}.')
+                try:
+                    run(['gh', 'run', 'watch', status.workflow, '-R', config['github']['cactus']])
+                    run(['gh', 'run', 'download', status.workflow, '-n', f'{basename}.package', '-R', config['github']['cactus']])
+                except:
+                    raise Exception(f'Failed to download {pkgname}.')
 
             packages = [i for i in Path('.').glob('*.pkg.tar.zst')]
 
