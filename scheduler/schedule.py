@@ -47,29 +47,23 @@ def recursively_skip(dependency_graph, reversed_dependency_graph, pkgbase, calle
                 recursively_skip(dependency_graph, reversed_dependency_graph, i, caller=caller)
 
 if __name__ == '__main__':
-    import logging
-    import json
     import os
     import sys
+    import json
     import traceback
     import yaml
     from graphlib import TopologicalSorter
     from pathlib import Path
     from datetime import datetime, timedelta
-    from tornado.log import enable_pretty_logging
-    from tornado.options import options
+    from .. import config, logger
     from ..models import Status
-    from .. import config
     from ..builder import github_actions
-
-    options.logging = 'info'
-    logger = logging.getLogger()
-    enable_pretty_logging(options=options, logger=logger)
 
     repository = Path(sys.argv[1])
     dependency_graph = {}
     reversed_dependency_graph = {}
 
+    logger.info('Loading cactus.yaml')
     for i in repository.rglob('cactus.yaml'):
         try:
             pkgbase = str(i.parent)[len(str(repository))+1:]
@@ -89,10 +83,12 @@ if __name__ == '__main__':
             logger.error(f'Failed to load %s', pkgbase)
             traceback.print_exc()
 
+    logger.info('Recursively fail packages')
     failed = [i.key for i in Status.objects.filter(status='FAILED')]
     for i in failed:
         recursively_fail(dependency_graph, reversed_dependency_graph, i)
 
+    logger.info('Recursively skip packages')
     staled = [i.key for i in Status.objects.filter(status='STALED')]
     for i in staled:
         recursively_skip(dependency_graph, reversed_dependency_graph, i)
@@ -101,6 +97,7 @@ if __name__ == '__main__':
     for i in building:
         recursively_skip(dependency_graph, reversed_dependency_graph, i)
 
+    logger.info('Start scheduling')
     sorter = TopologicalSorter(dependency_graph)
     order = list(sorter.static_order())
     order = [i for i in order if i in staled]
