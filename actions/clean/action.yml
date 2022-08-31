@@ -10,6 +10,6 @@ runs:
         echo 'Cleaning ...'
         pacman -Sc --noconfirm
         cd repository
-        git clean -fx
+        git clean -fdx
         echo
         df -h
