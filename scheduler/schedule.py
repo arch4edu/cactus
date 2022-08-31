@@ -50,6 +50,7 @@ if __name__ == '__main__':
     import os
     import sys
     import json
+    import logging
     import traceback
     import yaml
     from graphlib import TopologicalSorter
@@ -58,6 +59,8 @@ if __name__ == '__main__':
     from .. import config, logger
     from ..models import Status
     from ..builder import github_actions
+
+    logger.setLevel(logging.INFO)
 
     repository = Path(sys.argv[1])
     dependency_graph = {}
