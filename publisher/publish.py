@@ -38,7 +38,7 @@ if __name__ == '__main__':
             for package_record in Package.objects.filter(key=record.key):
                 package_record.age += 1
                 if package_record.age > config["publisher"]["max-age"]:
-                    arch = package_record.name[:-12].split('-')[-1]
+                    arch = package_record.package[:-12].split('-')[-1]
                     oldfiles = []
                     oldfiles.append(f'{config["publisher"]["path"]}/{arch}/{package_record.package}')
                     oldfiles.append(oldfiles[-1] + '.sig')
