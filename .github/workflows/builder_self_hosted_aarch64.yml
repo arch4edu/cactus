@@ -58,11 +58,6 @@ jobs:
 
       - uses: arch4edu/cactus/actions/config-makepkg@main
 
-      - name: Configure makepkg for archlinuxarm
-        run: |
-          sed '/^PKGEXT/s/\.pkg\.tar\.xz/.pkg.tar.zst/' -i /etc/makepkg.conf
-          cp /etc/makepkg.conf /usr/share/devtools/makepkg-x86_64.conf
-
       - uses: petronny/git-config-user@master
         with:
           path: repository
