@@ -1,4 +1,5 @@
 #!/bin/python
+import yaml
 
 def load_depends(repository, pkgbase, key='depends'):
     with open(repository / pkgbase / 'cactus.yaml') as f:
@@ -26,20 +27,12 @@ def resolve_depends(repository, pkgbase, result, key='depends'):
 if __name__ == '__main__':
     import sys
     import json
-    import logging
-    import yaml
     from datetime import datetime, timedelta
     from django.db import connection
     from pathlib import Path
-    from tornado.log import enable_pretty_logging
-    from tornado.options import options
-    from .. import config
+    from .. import config, logger
     from ..models import Status
-    from ..common.util import run, move, remove, rmtree
-
-    options.logging = 'debug'
-    logger = logging.getLogger()
-    enable_pretty_logging(options=options, logger=logger)
+    from ..common.util import run, move, rmtree, download_artifact_package
 
     repository = Path(sys.argv[1])
     pkgbase = sys.argv[2]
@@ -54,15 +47,15 @@ if __name__ == '__main__':
     depends.mkdir()
 
     for pkgbase, pkgname in all_depends:
-        connection.connect()
-
         if pkgbase == 'pacman':
             try:
                 logger.info(f'Downloading {pkgname} with pacman ...')
                 run(['pacman', '--cachedir', depends, '--noconfirm', '-Swdd', pkgname])
+                continue
             except:
                 raise Exception(f'Failed to download {pkgname} with pacman.')
-            continue
+
+        connection.connect()
 
         try:
             status = Status.objects.get(key=pkgbase)
@@ -83,30 +76,7 @@ if __name__ == '__main__':
                     raise(f'Failed to download {pkgname} with pacman.')
 
         if not downloaded:
-            logger.info(f'Downloading {pkgname} from {pkgbase} in {status.workflow} ...')
-            basename = status.key.split('/')[-1]
-            try:
-                run(['gh', 'run', 'download', status.workflow, '-n', f'{basename}.package', '-R', config['github']['cactus']])
-            except:
-                try:
-                    run(['gh', 'run', 'watch', status.workflow, '-R', config['github']['cactus']])
-                    run(['gh', 'run', 'download', status.workflow, '-n', f'{basename}.package', '-R', config['github']['cactus']])
-                except:
-                    raise Exception(f'Failed to download {pkgname}.')
-
-            packages = [i for i in Path('.').glob('*.pkg.tar.zst')]
-
-            matched = False
-            for package in packages:
-                if 'COLON' in package.name:
-                    package = package.rename(package.name.replace('COLON', ':'))
-
-                _pkgname = '-'.join(package.name.split('-')[:-3])
-                if _pkgname == pkgname:
-                    move(package, depends / package.name)
-                    matched = True
-                else:
-                    remove(package)
-
-            if not matched:
-                raise Exception(f'No package named {pkgname} in {pkgbase}.')
+            _pkgbase = status.key.split('/')[-1]
+            download_artifact_package(status.workflow, _pkgbase, pkgname)
+            package = [i for i in Path('.').glob('*.pkg.tar.zst')][0]
+            move(package, depends)

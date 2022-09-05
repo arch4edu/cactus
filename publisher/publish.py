@@ -1,16 +1,16 @@
 #!/bin/python
-import os
-from django.db import connection
+import time
+from .. import config, logger
+from ..common.util import run, move, symlink, parse_package, download_artifact_package
+
+def repo_add(repository, arch, package)
+    db = repository / arch / f"{config['pacman']['repository']}.db.tar.gz"
+    run(['repo-add', db, package])
+    time.sleep(1)
 
 if __name__ == '__main__':
-    import time
-    import sys
-    import json
-    import logging
-    import shutil
     from pathlib import Path
-    from .. import config, logger
-    from ..common.util import run, symlink
+    from django.db import connection
     from ..models import Status, Version, Package
 
     repository = Path('repository')
@@ -20,19 +20,9 @@ if __name__ == '__main__':
             run(['rsync', '-avP', '--exclude', '*.pkg*', f'repository:{config["publisher"]["path"]}/*', repository])
 
         workflow = record.workflow
-        basename = record.key.split('/')[-1]
-        logger.info(f'Downloading {record.key} from {workflow}')
-        try:
-            run(['gh', 'run', 'download', workflow, '-n', f'{basename}.package', '-R', config['github']['cactus']])
-        except:
-            try:
-                run(['gh', 'run', 'watch', workflow, '-R', config['github']['cactus']])
-                run(['gh', 'run', 'download', workflow, '-n', f'{basename}.package', '-R', config['github']['cactus']])
-            except:
-                logger.error('Failed to download %s', record.key)
-                continue
+        pkgbase = record.key.split('/')[-1]
 
-        packages = [i for i in Path('.').glob('*.pkg.tar.zst')]
+        download_artifact_package(workflow, pkgbase)
 
         if len(packages) > 0:
             for package_record in Package.objects.filter(key=record.key):
@@ -55,27 +45,25 @@ if __name__ == '__main__':
             if 'COLON' in package.name:
                 package = package.rename(package.name.replace('COLON', ':'))
 
+        for package in Path('.').glob('*.pkg.tar.zst'):
             run(['gpg', '--pinentry-mode', 'loopback', '--passphrase', '', '--detach-sign', '--', package])
-
+            signature = package.parent / f'{package.name}.sig'
             logger.info('Signed %s', package.name)
-            arch = package.name[:-12].split('-')[-1]
-            if arch != 'any' and not arch in config['pacman']['archs'].split(' '):
-                continue
-            shutil.move(package, repository / arch / package.name)
-            shutil.move(package.parent / f'{package.name}.sig' , repository / arch / f'{package.name}.sig')
 
-            db = repository / arch / f"{config['pacman']['repository']}.db.tar.gz"
-            run(['repo-add', db, repository / arch / package.name])
-            time.sleep(1)
+            _, _, _, _, arch, _ = parse_package(package_record.package)
+            if arch != 'any' and not arch in config['pacman']['archs'].split(' '):
+                logger.info('Ignored %s', package.name)
+                continue
+
+            move(package, repository / arch)
+            move(signature, repository / arch)
+            repo_add(repository, arch, repository / arch / package.name)
 
             if arch == 'any':
                 for arch in config['pacman']['archs'].split(' '):
                     symlink(Path('..') / 'any' / package.name, repository / arch / package.name)
                     symlink(Path('..') / 'any' / f'{package.name}.sig', repository / arch / f'{package.name}.sig')
-
-                    db = repository / arch / f"{config['pacman']['repository']}.db.tar.gz"
-                    run(['repo-add', db, repository / arch / package.name])
-                    time.sleep(1)
+                    repo_add(repository, arch, repository / arch / package.name)
 
             run(['sh', '-c', f'rsync -avP repository/* repository:{config["publisher"]["path"]}'])
 
