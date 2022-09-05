@@ -33,7 +33,7 @@ if __name__ == '__main__':
             signature = package.parent / f'{package.name}.sig'
             logger.info('Signed %s', package.name)
 
-            _, _, _, _, arch, _ = parse_package(package_record.package)
+            _, _, _, _, arch, _ = parse_package(package.name)
             if arch != 'any' and not arch in config['pacman']['archs'].split(' '):
                 logger.info('Ignored %s', package.name)
                 continue

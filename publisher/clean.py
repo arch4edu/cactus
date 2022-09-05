@@ -48,4 +48,4 @@ if __name__ == '__main__':
         remove_package(package.package, repository)
         run(['sh', '-c', f'rsync -avP repository/* repository:{config["publisher"]["path"]}'])
         package.delete()
-        logger.info('Removed %s', package.name)
+        logger.info('Removed %s', package.key)

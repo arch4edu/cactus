@@ -51,7 +51,7 @@ def download_artifact_package(workflow, pkgbase, pkgname=None):
         if 'COLON' in package.name:
             package.rename(package.name.replace('COLON', ':'))
 
-    if package:
+    if pkgname:
         matched = False
         for package in Path('.').glob('*.pkg.tar.zst'):
             _pkgname, _, _, _, _, _ = parse_package(package.name)
