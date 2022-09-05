@@ -44,5 +44,8 @@ jobs:
           path: pages
           token: ${{ steps.config.outputs.github_token }}
 
-      - name: Publish pacakges
+      - name: Publish built packages
         run: python -m cactus.publisher.publish
+
+      - name: Remove old and unmaintained packages
+        run: python -m cactus.publisher.clean

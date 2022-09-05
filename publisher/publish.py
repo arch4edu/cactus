@@ -3,7 +3,7 @@ import time
 from .. import config, logger
 from ..common.util import run, move, symlink, parse_package, download_artifact_package
 
-def repo_add(repository, arch, package)
+def repo_add(repository, arch, package):
     db = repository / arch / f"{config['pacman']['repository']}.db.tar.gz"
     run(['repo-add', db, package])
     time.sleep(1)
@@ -24,26 +24,9 @@ if __name__ == '__main__':
 
         download_artifact_package(workflow, pkgbase)
 
-        if len(packages) > 0:
-            for package_record in Package.objects.filter(key=record.key):
-                package_record.age += 1
-                if package_record.age > config["publisher"]["max-age"]:
-                    arch = package_record.package[:-12].split('-')[-1]
-                    oldfiles = []
-                    oldfiles.append(f'{config["publisher"]["path"]}/{arch}/{package_record.package}')
-                    oldfiles.append(oldfiles[-1] + '.sig')
-                    if arch == 'any':
-                        for arch in config['pacman']['archs'].split(' '):
-                            oldfiles.append(f'{config["publisher"]["path"]}/{arch}/{package_record.package}')
-                            oldfiles.append(oldfiles[-1] + '.sig')
-                    run(['ssh', 'repository', 'rm'] + oldfiles)
-                    package_record.delete()
-                else:
-                    package_record.save()
-
-        for package in packages:
-            if 'COLON' in package.name:
-                package = package.rename(package.name.replace('COLON', ':'))
+        for package_record in Package.objects.filter(key=record.key):
+            package_record.age += 1
+            package_record.save()
 
         for package in Path('.').glob('*.pkg.tar.zst'):
             run(['gpg', '--pinentry-mode', 'loopback', '--passphrase', '', '--detach-sign', '--', package])
