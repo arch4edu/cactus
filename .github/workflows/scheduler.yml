@@ -23,6 +23,7 @@ jobs:
       - uses: arch4edu/cactus/actions/checkout-repository@main
 
       - name: Scheduling
+        id: schedule
         run: |
           for i in $(seq 60)
           do
@@ -30,7 +31,10 @@ jobs:
             python -m cactus.scheduler.schedule repository
             sleep 300
           done
+          echo ::set-output name=result::success
 
       - name: Start a new scheduler
-        #if: ${{ always() }}
-        run: python -m cactus.scheduler.refresh
+        if: ${{ always() }}
+        run: |
+          [ -z "${{ steps.schedule.outputs.result }}" ] && sleep 900
+          python -m cactus.scheduler.refresh
