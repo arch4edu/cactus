@@ -1,8 +1,5 @@
 #!/bin/sh
-for i in $(cat .cactus_filelist)
-do
-	git add $i
-done
+git add $(cat .cactus_filelist)
 rm -f .cactus_filelist
 
 git-commit

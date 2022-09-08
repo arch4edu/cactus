@@ -2,4 +2,4 @@
 git-rm-all
 download-aur-snapshot $1
 rm -f .gitignore
-ls > .cactus_filelist
+ls -A > .cactus_filelist

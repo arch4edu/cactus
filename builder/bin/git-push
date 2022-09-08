@@ -4,9 +4,9 @@ retry=$1
 
 for i in $(seq $retry)
 do
-	git pull --rebase
+	git pull --rebase || git clean -fd .
 	git push origin master && success=1 || sleep $i
 	[ -n "$success" ] && break
 done
 
-[ -z "$success" ] && exit 1
+[ -n "$success" ] && exit 0 || exit 1
