@@ -64,7 +64,8 @@ jobs:
       - name: Download dependencies
         run: python -m cactus.builder.download-depends repository ${{ github.event.inputs.pkgbase }}
 
-      - uses: arch4edu/cactus/actions/build-package@main
+      - name: Build ${{ github.event.inputs.pkgbase }}
+        uses: arch4edu/cactus/actions/build-package@main
         id: build
         with:
           pkgbase: ${{ github.event.inputs.pkgbase }}
