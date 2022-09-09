@@ -1,5 +1,9 @@
 #!/bin/sh
-git add $(cat .cactus_filelist)
+while read line
+do
+	git add "$line"
+done < .cactus_filelist
+
 rm -f .cactus_filelist
 
 git-commit
