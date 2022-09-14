@@ -56,3 +56,19 @@ if __name__ == '__main__':
             status.status = 'STALED'
             status.save()
             logger.debug(f'{key}: try to rebuild {record.newver}')
+
+    if datetime.today().weekday() > 0:
+        sys.exit(0)
+
+    logger.info('Removing dropped packages')
+
+    for record in Version.objects.filter(newver__exact=F('oldver')):
+        key = record.key[:record.key.find(':')]
+        if not (repository / key).exists():
+            try:
+                status = Status.objects.get(key=key)
+                status.delete()
+            except Status.DoesNotExist:
+                pass
+            record.delete()
+            logger.warning('Removed %s', key)
