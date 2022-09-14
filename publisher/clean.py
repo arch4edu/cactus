@@ -4,6 +4,13 @@ from django.db import connection
 from .. import config, logger
 from ..common.util import run, parse_package
 
+def repo_remove(db, pkgname):
+    output = run(['repo-remove', db, pkgname], capture_output=True, check=False)
+    stderr = output.stderr.decode('utf-8')
+    if output.returncode != 0 and not f"Package matching '{pkgname}' not found." in stderr:
+        raise Exception(f'Failed to remove {pkgname} from {db}.')
+    time.sleep(1)
+
 def remove_package(package, repository=None):
     pkgname, _, _, _, arch, _ = parse_package(package)
     oldfiles = []
@@ -12,8 +19,7 @@ def remove_package(package, repository=None):
 
     if repository:
         db = repository / arch / f"{config['pacman']['repository']}.db.tar.gz"
-        run(['repo-remove', db, pkgname])
-        time.sleep(1)
+        repo_remove(db, pkgname)
 
     if arch == 'any':
         for arch in config['pacman']['archs'].split(' '):
@@ -21,8 +27,7 @@ def remove_package(package, repository=None):
             oldfiles.append(oldfiles[-1] + '.sig')
             if repository:
                 db = repository / arch / f"{config['pacman']['repository']}.db.tar.gz"
-                run(['repo-remove', db, pkgname])
-                time.sleep(1)
+                repo_remove(db, pkgname)
 
     run(['ssh', 'repository', 'rm'] + oldfiles)
     logger.debug('Deleted %s.', oldfiles)

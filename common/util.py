@@ -6,7 +6,9 @@ from pathlib import Path
 from .. import config, logger
 
 def run(command, **kwargs):
-    return subprocess.run(command, check=True, **kwargs)
+    if not 'check' in kwargs:
+        kwargs['check'] = True
+    return subprocess.run(command, **kwargs)
 
 remove = os.remove
 move = shutil.move
