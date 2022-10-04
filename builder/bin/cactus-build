@@ -51,7 +51,7 @@ build(){
 	[ "$makechrootpkg_args" = "null" ] && unset makechrootpkg_args
 	makepkg_args=$(yq -r .makepkg_args cactus.yaml)
 	[ "$makepkg_args" = "null" ] && unset makepkg_args
-	for i in $(find depends -name "*.pkg.tar.zst")
+	for i in $(find depends -name "*.pkg.tar*" -not -name "*.sig")
 	do
 		depends="$depends -I $i"
 	done
