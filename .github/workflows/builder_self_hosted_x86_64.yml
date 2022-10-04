@@ -1,5 +1,7 @@
 name: Builder (Self-hosted x86_64)
 
+run-name: Build ${{ inputs.pkgbase }}
+
 on:
   workflow_dispatch:
     inputs:

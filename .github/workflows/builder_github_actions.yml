@@ -1,5 +1,7 @@
 name: Builder (Github Actions)
 
+run-name: Build ${{ inputs.pkgbase }}
+
 on:
   workflow_dispatch:
     inputs:

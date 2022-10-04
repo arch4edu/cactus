@@ -1,5 +1,7 @@
 name: Trigger rebuild
 
+run-name: Trigger rebuild for ${{ inputs.pkgbase }}
+
 on:
   workflow_dispatch:
     inputs:
