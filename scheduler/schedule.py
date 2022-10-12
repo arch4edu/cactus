@@ -86,18 +86,12 @@ if __name__ == '__main__':
             logger.error(f'Failed to load %s', pkgbase)
             traceback.print_exc()
 
-    logger.info('Recursively fail packages')
-    failed = [i.key for i in Status.objects.filter(status='FAILED')]
-    for i in failed:
-        recursively_fail(dependency_graph, reversed_dependency_graph, i)
-
     logger.info('Recursively skip packages')
+    failed = [i.key for i in Status.objects.filter(status='FAILED')]
     staled = [i.key for i in Status.objects.filter(status='STALED')]
-    for i in staled:
-        recursively_skip(dependency_graph, reversed_dependency_graph, i)
-
-    building = [i.key for i in Status.objects.filter(status='BUILDING')] + [i.key for i in Status.objects.filter(status='SCHEDULED')]
-    for i in building:
+    scheduled = [i.key for i in Status.objects.filter(status='SCHEDULED')]
+    building = [i.key for i in Status.objects.filter(status='BUILDING')]
+    for i in failed + staled + scheduled + building:
         recursively_skip(dependency_graph, reversed_dependency_graph, i)
 
     logger.info('Start scheduling')
