@@ -48,6 +48,9 @@ if __name__ == '__main__':
                     symlink(Path('..') / 'any' / f'{package.name}.sig', repository / arch / f'{package.name}.sig')
                     repo_add(repository, arch, repository / arch / package.name)
 
+            with open(repository / 'lastupdate', 'w') as f:
+                f.write(str(int(time.time())))
+
             run(['sh', '-c', f'rsync -avP repository/* repository:{config["publisher"]["path"]}'])
 
             package_record = Package(key=record.key, package=package.name)

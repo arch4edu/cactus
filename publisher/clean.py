@@ -43,14 +43,25 @@ if __name__ == '__main__':
         remove_package(package.package)
         package.delete()
 
+        if not repository.exists():
+            run(['rsync', '-avP', '--exclude', '*.pkg*', f'repository:{config["publisher"]["path"]}/*', repository])
+
+        with open(repository / 'lastupdate', 'w') as f:
+            f.write(str(int(time.time())))
+
+        run(['sh', '-c', f'rsync -avP repository/* repository:{config["publisher"]["path"]}'])
+
     logger.info('Removing dropped packages ...')
     status = Status.objects.all()
     for package in Package.objects.exclude(key__in=status):
-
         if not repository.exists():
             run(['rsync', '-avP', '--exclude', '*.pkg*', f'repository:{config["publisher"]["path"]}/*', repository])
 
         remove_package(package.package, repository)
+
+        with open(repository / 'lastupdate', 'w') as f:
+            f.write(str(int(time.time())))
+
         run(['sh', '-c', f'rsync -avP repository/* repository:{config["publisher"]["path"]}'])
         package.delete()
         logger.info('Removed %s', package.key)
