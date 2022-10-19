@@ -53,11 +53,11 @@ if __name__ == '__main__':
 
             run(['sh', '-c', f'rsync -avP repository/* repository:{config["publisher"]["path"]}'])
 
+            connection.connect()
             package_record = Package(key=record.key, package=package.name)
             package_record.save()
 
             logger.info('Published %s', package.name)
 
-        connection.connect()
         record.status = 'PUBLISHED'
         record.save()
