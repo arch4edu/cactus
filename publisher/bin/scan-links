@@ -1,0 +1,39 @@
+#!/usr/bin/python
+import contextlib
+import io
+import tarfile
+import tempfile
+
+from Namcap.rules.sodepends import scanlibs
+from Namcap.util import is_elf
+from pyzstd import decompress_stream
+
+
+@contextlib.contextmanager
+def ZstdTarReader(name, *, zstd_dict=None, option=None, **kwargs):
+    with io.open(name, "rb") as ifh:
+        with tempfile.TemporaryFile() as tmp_file:
+            decompress_stream(ifh, tmp_file, zstd_dict=zstd_dict, option=option)
+            tmp_file.seek(0)
+            with tarfile.TarFile(fileobj=tmp_file, **kwargs) as tar:
+                yield tar
+
+
+def get_sodepends(package):
+    sodepends = set()
+
+    with ZstdTarReader(package) as tar:
+        pkg_so_files = [i.split("/")[-1] for i in tar.getnames() if ".so" in i]
+
+        files = [i for i in tar.getmembers() if i.isfile()]
+        for file in files:
+            file = tar.extractfile(file)
+            sodepends.update(scanlibs(file, "", {}).keys())
+        sodepends = [i for i in sodepends if not i in pkg_so_files]
+    return sodepends
+
+
+if __name__ == "__main__":
+    import sys
+
+    print(get_sodepends(sys.argv[1]))

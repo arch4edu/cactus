@@ -1,0 +1,65 @@
+--- /usr/bin/repo-add	2022-09-25 20:54:56.000000000 +0800
++++ repo-add	2022-10-19 20:18:08.645024013 +0800
+@@ -337,6 +337,15 @@
+ 	echo "%FILES%" >"$files_path"
+ 	bsdtar --exclude='^.*' -tf "$pkgfile" | LC_ALL=C sort -u >>"$files_path"
+ 
++	# copy updated package entry into "links" database
++	cp -a "$tmpdir/db/$pkgname-$pkgver" "$tmpdir/links/$pkgname-$pkgver"
++
++	# create links file
++	msg2 "$(gettext "Creating '%s' db entry...")" 'links'
++	local links_path="$tmpdir/links/$pkgname-$pkgver/links"
++	echo "%LINKS%" >"$files_path"
++	scan-links "$pkgfile" >>"$links_path"
++
+ 	if (( RMEXISTING )); then
+ 		msg2 "$(gettext "Removing old package file '%s'")" "$oldfilename"
+ 		rm -f ${oldfile} ${oldfile}.sig
+@@ -362,6 +371,10 @@
+ 		local filesentry=$(echo "$pkgentry" | sed 's/\(.*\)\/db\//\1\/files\//')
+ 		rm -rf "$filesentry"
+ 
++		# remove entries in "links" database
++		local linksentry=$(echo "$pkgentry" | sed 's/\(.*\)\/db\//\1\/links\//')
++		rm -rf "$linksentry"
++
+ 		pkgentry=$(find_pkgentry "$pkgname")
+ 	done
+ 	return $notfound
+@@ -402,7 +415,7 @@
+ 		exit 1
+ 	fi
+ 
+-	for repo in "db" "files"; do
++	for repo in "db" "files" "links"; do
+ 		dbfile=${repodir}/$REPO_DB_PREFIX.$repo.$REPO_DB_SUFFIX
+ 
+ 		if [[ -f $dbfile ]]; then
+@@ -475,7 +488,7 @@
+ 
+ 	pushd "$dirname" >/dev/null
+ 
+-	for repo in "db" "files"; do
++	for repo in "db" "files" "links"; do
+ 		filename=${REPO_DB_PREFIX}.${repo}.${REPO_DB_SUFFIX}
+ 		tempname=$dirname/.tmp.$filename
+ 
+@@ -518,7 +531,7 @@
+ 	# $LOCKFILE is already guaranteed to be absolute so this is safe
+ 	dirname=${LOCKFILE%/*}
+ 
+-	for repo in "db" "files"; do
++	for repo in "db" "files" "links"; do
+ 		filename=${REPO_DB_PREFIX}.${repo}.${REPO_DB_SUFFIX}
+ 		# this ensures we create it on the same filesystem, making moves atomic
+ 		tempname=$dirname/.tmp.$filename
+@@ -589,7 +602,7 @@
+ 	error "$(gettext "Cannot create temp directory for database building.")"; \
+ 	exit 1)
+ 
+-for repo in "db" "files"; do
++for repo in "db" "files" "links"; do
+ 	mkdir "$tmpdir/$repo"
+ done
+ 

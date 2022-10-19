@@ -20,7 +20,7 @@ jobs:
       - uses: arch4edu/cactus/actions/upgrade-archlinux@main
 
       - name: Install runtime dependencies
-        run: pacman -S --noconfirm --needed github-cli openssh python-mysqlclient rsync
+        run: pacman -S --noconfirm --needed github-cli namcap openssh patch python-mysqlclient python-pyzstd rsync
 
       - uses: arch4edu/cactus/actions/setup-cactus@main
 
@@ -38,11 +38,10 @@ jobs:
       - name: Configure GitHub CLI
         run: echo ${{ steps.config.outputs.github_token }} | gh auth login --with-token
 
-      - uses: actions/checkout@master
-        with:
-          repository: ${{ steps.config.outputs.github_pages_repository }}
-          path: pages
-          token: ${{ steps.config.outputs.github_token }}
+      - name: Patch repo-add
+        run: |
+          patch /usr/bin/repo-add < cactus/publisher/repo-add.patch
+          echo "$(realpath cactus/publisher/bin)" >> $GITHUB_PATH
 
       - name: Publish built packages
         run: python -m cactus.publisher.publish
