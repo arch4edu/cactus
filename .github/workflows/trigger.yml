@@ -27,4 +27,4 @@ jobs:
       - uses: arch4edu/cactus/actions/setup-cactus@main
 
       - name: Update database
-        run: python -m cactus.seeker.trigger ${{ github.event.inputs.pkgbase }}
+        run: python -m cactus.detector.trigger ${{ github.event.inputs.pkgbase }}

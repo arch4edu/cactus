@@ -1,4 +1,4 @@
-name: Seeker
+name: Detector
 
 on:
   schedule:
@@ -7,7 +7,7 @@ on:
 
 jobs:
 
-  seek:
+  check:
     runs-on: ubuntu-latest
     container:
       image: archlinux
@@ -33,7 +33,7 @@ jobs:
       - uses: arch4edu/cactus/actions/checkout-repository@main
 
       - name: Collecting cactus.yaml
-        run: python -m cactus.seeker.collect repository
+        run: python -m cactus.detector.collect repository
 
       - name: Run nvchecker
         run: |
@@ -42,4 +42,4 @@ jobs:
           nvchecker --logger both -c nvchecker.toml | tee nvchecker.log
 
       - name: Update database
-        run: python -m cactus.seeker.update repository
+        run: python -m cactus.detector.update repository
