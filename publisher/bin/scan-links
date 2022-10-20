@@ -29,11 +29,11 @@ def get_sodepends(package):
         for file in files:
             file = tar.extractfile(file)
             sodepends.update(scanlibs(file, "", {}).keys())
-        sodepends = [i for i in sodepends if not i in pkg_so_files]
+        sodepends = sorted([i for i in sodepends if not i in pkg_so_files])
     return sodepends
 
 
 if __name__ == "__main__":
     import sys
 
-    print(get_sodepends(sys.argv[1]))
+    print('\n'.join(get_sodepends(sys.argv[1])))
