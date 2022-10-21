@@ -18,7 +18,7 @@ runs:
         su makepkg -c cactus-build | tee build.log
         if [ $(grep -c 'Cactus has successfully built the package.' build.log) -gt 0 ]
         then
-          echo ::set-output name=result::built
+          echo "result=built" >> $GITHUB_OUTPUT
         else
-          echo ::set-output name=result::failed
+          echo "result=failed" >> $GITHUB_OUTPUT
         fi

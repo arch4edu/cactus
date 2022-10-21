@@ -17,7 +17,7 @@ runs:
 
     - id: basename
       shell: bash -e {0}
-      run: echo "::set-output name=basename::$(basename ${{ inputs.pkgbase }})"
+      run: echo "basename=$(basename ${{ inputs.pkgbase }})" >> $GITHUB_OUTPUT
 
     - uses: actions/upload-artifact@master
       with:

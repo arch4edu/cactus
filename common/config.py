@@ -1,9 +1,11 @@
 #!/bin/python
+import os
 from .. import config
 
-print(f'::set-output name=github_repository::%s' % config['github']['repository'])
-print(f'::set-output name=github_token::%s' % config['github']['token'])
-print(f'::set-output name=pacman_repository::%s' % config['pacman']['repository'])
-print(f'::set-output name=pacman_keyring_repository::%s' % config['pacman']['keyring_repository'])
-print(f'::set-output name=pacman_mirrorlist_repository::%s' % config['pacman']['mirrorlist_repository'])
-print(f'::set-output name=pacman_archs::%s' % config['pacman']['archs'])
+with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+    f.write(f"github_repository={config['github']['repository']}\n")
+    f.write(f"github_token={config['github']['token']}\n")
+    f.write(f"pacman_repository={config['pacman']['repository']}\n")
+    f.write(f"pacman_keyring_repository={config['pacman']['keyring_repository']}\n")
+    f.write(f"pacman_mirrorlist_repository={config['pacman']['mirrorlist_repository']}\n")
+    f.write(f"pacman_archs={config['pacman']['archs']}\n")

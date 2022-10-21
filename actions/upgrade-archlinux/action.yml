@@ -14,7 +14,7 @@ runs:
     - name: Get time
       id: time
       shell: bash -e {0}
-      run: echo "::set-output name=time::$(date +%F-%T)"
+      run: echo "time=$(date +%F-%T)" >> $GITHUB_OUTPUT
 
     - name: Set up pacman package cache
       uses: actions/cache@master

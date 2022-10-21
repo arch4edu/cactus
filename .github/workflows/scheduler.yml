@@ -31,7 +31,7 @@ jobs:
             python -m cactus.scheduler.schedule repository
             sleep 300
           done
-          echo ::set-output name=result::success
+          echo "result=success" >> $GITHUB_OUTPUT
 
       - name: Start a new scheduler
         if: ${{ always() }}
