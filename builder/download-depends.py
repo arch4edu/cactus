@@ -67,7 +67,7 @@ if __name__ == '__main__':
         if status is None or datetime.now() - status.timestamp > timedelta(days=1):
             logger.info(f'Downloading {pkgname} with pacman ...')
             try:
-                run(['pacman', '--config', 'pacman/pacman.conf', '--dbpath', 'pacman/db', '--gpgdir', 'pacman/gnupg', '--cachedir', depends, '--noconfirm', '-Swdd', pkgname])
+                run(['pacman', '--cachedir', depends, '--noconfirm', '-Swdd', f'{config["pacman"]["repository"]}/{pkgname}'])
                 downloaded = True
             except:
                 if status:

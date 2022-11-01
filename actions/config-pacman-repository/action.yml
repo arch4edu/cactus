@@ -9,32 +9,27 @@ inputs:
   mirrorlist-repository:
     description: 'Mirrorlist repository'
     required: true
-outputs:
-  time:
-    description: "Current time"
-    value: ${{ steps.time.outputs.time }}
 runs:
   using: "composite"
   steps:
     - uses: actions/checkout@master
       with:
         repository: ${{ inputs.keyring-repository }}
-        path: pacman/keyring
+        path: keyring
 
     - uses: actions/checkout@master
       with:
         repository: ${{ inputs.mirrorlist-repository }}
-        path: pacman/mirrorlist
+        path: mirrorlist
 
     - shell: bash -e {0}
       run: |
-        mkdir -p pacman/db
-        cd pacman
         cp keyring/* /usr/share/pacman/keyrings/
-        pacman-key --gpgdir gnupg --init
-        pacman-key --gpgdir gnupg --populate ${{ inputs.pacman-repository }}
-        echo [options] > pacman.conf
-        pacman-conf | grep '^Architecture' >> pacman.conf
-        echo [${{ inputs.pacman-repository }}] >> pacman.conf
-        sed 's/#//' mirrorlist/*mirrorlist* >> pacman.conf
-        pacman -Sy --config pacman.conf --dbpath db
+        pacman-key --init
+        pacman-key --populate ${{ inputs.pacman-repository }}
+        echo [options] >> /etc/pacman.conf
+        echo [${{ inputs.pacman-repository }}] >> /etc/pacman.conf
+        echo Include = /etc/pacman.d/mirrorlist.${{ inputs.pacman-repository }} >> /etc/pacman.conf
+        sed 's/#//' -i mirrorlist/*mirrorlist*
+        rankmirrors -r ${{ inputs.pacman-repository }} mirrorlist/*mirrorlist* | sed -n '/^#/b;p' | tee /etc/pacman.d/mirrorlist.${{ inputs.pacman-repository }}
+        pacman -Sy

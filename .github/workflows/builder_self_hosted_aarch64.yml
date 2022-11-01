@@ -32,7 +32,7 @@ jobs:
           pacman-key --init
           pacman-key --populate archlinuxarm
           pacman -Syu --noconfirm
-          pacman -S --noconfirm --needed --assume-installed python2 base-devel devtools-alarm dbus git github-cli jq wget pyalpm python-mysqlclient yq zsh
+          pacman -S --noconfirm --needed --assume-installed python2 base-devel devtools-alarm dbus git github-cli jq pacman-contrib pyalpm python-mysqlclient wget yq zsh
 
       - uses: arch4edu/cactus/actions/setup-cactus@main
 
