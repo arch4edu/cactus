@@ -10,7 +10,7 @@
 +	# create links file
 +	msg2 "$(gettext "Creating '%s' db entry...")" 'links'
 +	local links_path="$tmpdir/links/$pkgname-$pkgver/links"
-+	echo "%LINKS%" >"$files_path"
++	echo "%LINKS%" >"$links_path"
 +	scan-links "$pkgfile" >>"$links_path"
 +
  	if (( RMEXISTING )); then
