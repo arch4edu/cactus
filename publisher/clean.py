@@ -29,7 +29,7 @@ def remove_package(package, repository=None):
                 db = repository / arch / f"{config['pacman']['repository']}.db.tar.gz"
                 repo_remove(db, pkgname)
 
-    run(['ssh', 'repository', 'rm'] + oldfiles)
+    run(['ssh', 'repository', 'rm', '-f'] + oldfiles)
     logger.debug('Deleted %s.', oldfiles)
 
 if __name__ == '__main__':
