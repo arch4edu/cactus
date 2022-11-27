@@ -79,4 +79,4 @@ if __name__ == '__main__':
             _pkgbase = status.key.split('/')[-1]
             download_artifact_package(status.workflow, _pkgbase, pkgname)
             package = [i for i in Path('.').glob('*.pkg.tar.zst')][0]
-            move(package, depends)
+            move(package, depends / package.name)
