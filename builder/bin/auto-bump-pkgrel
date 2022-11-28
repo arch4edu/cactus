@@ -5,7 +5,7 @@ newver="$2"
 
 [ $(vercmp "$newver" "$oldver") -eq 1 ] && exit 0
 
-echo 'The new version is not greater than the old version.'
+echo "The new version $newver is not greater than the old version $oldver."
 
 if [ $(vercmp "${newver%-*}" "${oldver%-*}") -eq 0 ]
 then
