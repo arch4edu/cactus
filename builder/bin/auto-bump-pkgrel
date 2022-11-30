@@ -3,6 +3,7 @@
 oldver="$1"
 newver="$2"
 
+[ -z "$oldver" ] && exit 0
 [ $(vercmp "$newver" "$oldver") -eq 1 ] && exit 0
 
 echo "The new version $newver is not greater than the old version $oldver."
