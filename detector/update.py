@@ -48,7 +48,7 @@ if __name__ == '__main__':
             status.detail = 'nvchecker failed'
             status.save()
             continue
-        if status.status in ['', 'BUILT', 'PUBLISHED']:
+        elif status.status in ['', 'BUILT', 'PUBLISHED']:
             status.status = 'STALED'
             status.save()
             logger.debug(f'{key}: {record.oldver} -> {record.newver}')
