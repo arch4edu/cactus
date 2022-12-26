@@ -23,6 +23,10 @@ jobs:
 
       - uses: arch4edu/cactus/actions/setup-cactus@main
 
+      - name: Export configurations
+        id: config
+        run: python -m cactus.common.config
+
       - name: Set up nvchecker cache
         uses: actions/cache@master
         with:
@@ -39,6 +43,7 @@ jobs:
         run: |
           mkdir -p nvchecker
           [ -f nvchecker/newver.json ] && mv nvchecker/newver.json nvchecker/oldver.json
+          sed "s/GITHUB_TOKEN/${{ steps.config.outputs.github_token }}/" cactus/detector/keyfile.toml > keyfile.toml
           nvchecker --logger both -c nvchecker.toml | tee nvchecker.log
 
       - name: Update database
