@@ -47,13 +47,12 @@ if __name__ == '__main__':
             status.status = 'FAILED'
             status.detail = 'nvchecker failed'
             status.save()
-            continue
         elif status.status in ['', 'BUILT', 'PUBLISHED']:
-            status.status = 'STALED'
+            status.status = 'STALE'
             status.save()
             logger.debug(f'{key}: {record.oldver} -> {record.newver}')
         elif status.status == 'FAILED' and datetime.now() - status.timestamp > timedelta(days=1):
-            status.status = 'STALED'
+            status.status = 'STALE'
             status.save()
             logger.debug(f'{key}: try to rebuild {record.newver}')
 

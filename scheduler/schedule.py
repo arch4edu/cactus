@@ -19,7 +19,7 @@ def recursively_fail(dependency_graph, reversed_dependency_graph, pkgbase, calle
         del dependency_graph[pkgbase]
         try:
             status = Status.objects.get(key=pkgbase)
-            if caller and status.status == 'STALED':
+            if caller and status.status == 'STALE':
                 status.status = 'FAILED'
                 status.detail = f'Dependency issue: {caller}.'
                 status.save()
@@ -35,7 +35,7 @@ def recursively_skip(dependency_graph, reversed_dependency_graph, pkgbase, calle
             del dependency_graph[pkgbase]
             try:
                 status = Status.objects.get(key=pkgbase)
-                if status.status == 'STALED':
+                if status.status == 'STALE':
                     status.detail = f'Waiting for dependency: {caller}.'
                     status.save()
             except:
@@ -88,7 +88,7 @@ if __name__ == '__main__':
 
     logger.info('Recursively skip packages')
     failed = [i.key for i in Status.objects.filter(status='FAILED')]
-    staled = [i.key for i in Status.objects.filter(status='STALED')]
+    staled = [i.key for i in Status.objects.filter(status='STALE')]
     scheduled = [i.key for i in Status.objects.filter(status='SCHEDULED')]
     building = [i.key for i in Status.objects.filter(status='BUILDING')]
     for i in failed + staled + scheduled + building:
