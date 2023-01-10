@@ -38,6 +38,7 @@ if __name__ == '__main__':
                         if value is None:
                             nvchecker[key] = i.parent.name
                     config[f'{pkgbase}:{j}'] = nvchecker
+            config[f'{pkgbase}:{j}']['user_agent'] = 'nvchecker'
             logger.debug('Loaded %s', pkgbase)
         except:
             logger.error(f'Failed to load %s', pkgbase)
