@@ -13,8 +13,11 @@ if __name__ == '__main__':
     lines = open('nvchecker.log').readlines()
 
     logger.info('Updating newver')
+    nvchecker_failed = []
     for line in lines:
         line = json.loads(line)
+        if line['logger_name'] == 'nvchecker.util':
+            continue
         if line['event'] == 'up-to-date':
             continue
         try:
@@ -22,12 +25,47 @@ if __name__ == '__main__':
         except Version.DoesNotExist:
             record = Version(key=line['name'])
         if line['event'] != 'updated':
-            line['version'] = 'FAILED'
-        if record.newver != line['version']:
+            nvchecker_failed.append(line['name'])
+        elif record.newver != line['version']:
             record.newver = line['version']
         record.save()
 
-    logger.info('Marking staled and error')
+    nvchecker_failed = set([key[:key.find(':')] for key in nvchecker_failed])
+
+    logger.info('Marking failed')
+    for key in nvchecker_failed:
+        logger.debug(f'{key}: nvchecker failed')
+        try:
+            status = Status.objects.get(key=key)
+        except Status.DoesNotExist:
+            status = Status(key=key)
+        if not status.detail.startswith('nvchecker failed'):
+            if status.status == '':
+                status.detail = 'nvchecker failed'
+            else:
+                status.detail = f'nvchecker failed, previously {status.status}'
+            status.status = 'FAILED'
+            status.save()
+
+    logger.info('Checking previous failed')
+    for status in Status.objects.filter(detail__startswith='nvchecker failed'):
+        if status.key in nvchecker_failed:
+            continue
+        up_to_date = True
+        for version in Version.objects.filter(key__startswith=f'{status.key}:'):
+            if version.oldver != version.newver:
+                up_to_date = False
+                break
+        if up_to_date:
+            if ',' in status.detail:
+                status.status = status.detail.split('previously ', 1)[1]
+            else:
+                status.status = 'STALE'
+            logger.debug(f'{status.key}: recover from nvchecker failed to {status.status}')
+            status.detail = ''
+            status.save()
+
+    logger.info('Marking stale')
 
     repository = Path(sys.argv[1])
     for record in Version.objects.exclude(newver__exact=F('oldver')):
@@ -43,11 +81,7 @@ if __name__ == '__main__':
             status.delete()
             continue
 
-        if record.newver == 'FAILED':
-            status.status = 'FAILED'
-            status.detail = 'nvchecker failed'
-            status.save()
-        elif status.status in ['', 'BUILT', 'PUBLISHED']:
+        if status.status in ['', 'BUILT', 'PUBLISHED']:
             status.status = 'STALE'
             status.save()
             logger.debug(f'{key}: {record.oldver} -> {record.newver}')
