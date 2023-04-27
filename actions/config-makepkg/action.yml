@@ -9,7 +9,7 @@ runs:
         mkdir -p makepkg
         useradd -g wheel -d $(realpath makepkg) -m makepkg
         echo "%wheel ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-        chown -R makepkg:root repository makepkg
+        chown -R makepkg:root makepkg
 
         # https://bugs.archlinux.org/task/64265
         # Revert https://gitlab.archlinux.org/archlinux/devtools/-/commit/b7893a2ca8e09062197129881bce3fd6700a573a
