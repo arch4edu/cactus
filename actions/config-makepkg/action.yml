@@ -6,7 +6,6 @@ runs:
       run: |
         sed "s/#\?MAKEFLAGS=.*/MAKEFLAGS=-j$(nproc)/" -i /etc/makepkg.conf
         dbus-uuidgen --ensure=/etc/machine-id || dbus-uuidgen > /etc/machine-id
-        mkdir -p makepkg
         useradd -g wheel -d $(realpath makepkg) -m makepkg
         echo "%wheel ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
         chown -R makepkg:root makepkg
@@ -16,4 +15,4 @@ runs:
         sed '/yes y/s|.*|pacman -U --noconfirm -- "${pkgnames[@]/#//root/}"|' -i /usr/bin/makechrootpkg
 
         # Disable debug
-        sed '/^OPTIONS/s/ debug/ !debug/' -i /usr/share/devtools/makepkg-*.conf
+        sed '/^OPTIONS/s/ debug/ !debug/' -i /usr/share/devtools/makepkg.conf.d/*.conf
