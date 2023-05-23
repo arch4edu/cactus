@@ -15,4 +15,4 @@ runs:
         sed '/yes y/s|.*|pacman -U --noconfirm -- "${pkgnames[@]/#//root/}"|' -i /usr/bin/makechrootpkg
 
         # Disable debug
-        sed '/^OPTIONS/s/ debug/ !debug/' -i /usr/share/devtools/makepkg.conf.d/*.conf
+        sed '/^OPTIONS/s/ debug/ !debug/' -i /usr/share/devtools/makepkg.conf.d/*.conf || sed '/^OPTIONS/s/ debug/ !debug/' -i /usr/share/devtools/makepkg-*.conf
