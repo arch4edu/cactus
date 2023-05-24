@@ -47,6 +47,8 @@ set_cpu(){
 
 build(){
 	build_prefix=$(yq -r .build_prefix cactus.yaml)
+	archbuild_args=$(yq -r .archbuild_args cactus.yaml)
+	[ "$archbuild_args" = "null" ] && unset archbuild_args
 	makechrootpkg_args=$(yq -r .makechrootpkg_args cactus.yaml)
 	[ "$makechrootpkg_args" = "null" ] && unset makechrootpkg_args
 	makepkg_args=$(yq -r .makepkg_args cactus.yaml)
@@ -57,7 +59,7 @@ build(){
 	done
 	depends=${depends# }
 	#_eval $(set_cpu) $build_prefix-build -r /mnt -- $depends $makechrootpkg_args -- $makepkg_args --noprogressbar
-	_eval $build_prefix-build -r /mnt -- $depends $makechrootpkg_args -- $makepkg_args --noprogressbar
+	_eval $build_prefix-build -r /mnt $archbuild_args -- $depends $makechrootpkg_args -- $makepkg_args --noprogressbar
 }
 
 pre_build
