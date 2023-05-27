@@ -26,3 +26,8 @@ runs:
     - name: Upgrade the system
       shell: bash -e {0}
       run: pacman -Syu --noconfirm
+
+    - name: Cleanup pacman cache
+      uses: webiny/action-post-run@3.0.0
+      with:
+        run: pacman -Sc --noconfirm
