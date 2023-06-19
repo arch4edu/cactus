@@ -29,10 +29,12 @@ jobs:
           mkdir -p /mnt/sync /var/lib/pacman
           rm -rf /var/lib/pacman/sync
           ln -sf /mnt/sync /var/lib/pacman/sync
+          sed '/\[community\]/,+2d' -i /etc/pacman.conf || :
           pacman-key --init
           pacman-key --populate archlinuxarm
           pacman -Syu --noconfirm
           pacman -S --noconfirm --needed --assume-installed python2 base-devel devtools-alarm dbus git github-cli jq pacman-contrib pyalpm python-mysqlclient wget yq zsh
+          sed '/\[community\]/,+2d' -i /usr/share/devtools/pacman*.conf || :
 
       - uses: arch4edu/cactus/actions/setup-cactus@main
 
