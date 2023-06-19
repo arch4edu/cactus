@@ -1,0 +1,5 @@
+#!/bin/sh
+git-rm-all
+download-abs-snapshot $1
+rm -f .gitignore
+ls -A > .cactus_filelist

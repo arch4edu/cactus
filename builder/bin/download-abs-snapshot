@@ -3,22 +3,10 @@ set -e
 
 if [ -n "$1" ]
 then
-	package=$1
+	pkgbase=$1
 else
-	package=$(realpath .)
-	package=$(basename "${package}")
+	pkgbase=$(realpath .)
+	pkgbase=$(basename "${pkgbase}")
 fi
 
-json=$(
-	wget -q -O - "https://api.github.com/repos/archlinux/svntogit-community/contents/trunk?ref=packages/$package" ||
-	wget -q -O - "https://api.github.com/repos/archlinux/svntogit-packages/contents/trunk?ref=packages/$package"
-)
-
-[ $(echo $json | grep -Pz '^\[' -c) -eq 1 ] && sources=$(echo $json | jq -r '.[] | select(.type=="file") | .download_url') || sources=$(echo $json | jq -r 'select(.type=="file") | .download_url')
-
-for i in $sources
-do
-	echo Downloading $i
-	FILE=$(curl -sOJL -w "%{filename_effective}" $i)
-	git add $FILE
-done
+curl "https://gitlab.archlinux.org/archlinux/packaging/packages/${pkgbase}/-/archive/main/${pkgbase}-main.tar.bz2" | tar jxvf - --strip-components=1
