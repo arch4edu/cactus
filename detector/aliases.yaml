@@ -48,3 +48,8 @@ mediawiki:
   archpkg: mediawiki
   from_pattern: '^(\d+\.\d+)\..*'
   to_pattern: '\1'
+opencv:
+  source: archpkg
+  archpkg: opencv
+  from_pattern: '^(\d+\.\d+)\..*'
+  to_pattern: '\1'
