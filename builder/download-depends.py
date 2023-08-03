@@ -16,12 +16,12 @@ def resolve_depends(repository, pkgbase, result, key='depends'):
             if not (pkgbase, pkgname) in result:
                 result.append((pkgbase, pkgname))
                 if pkgbase != 'pacman' and (not 'recursive' in i or i['recursive']):
-                    result = resolve_depends(repository, pkgbase, result) 
+                    result = resolve_depends(repository, pkgbase, result)
         else:
             pkgbase, pkgname = i, i.split('/')[-1]
             if not (pkgbase, pkgname) in result:
                 result.append((pkgbase, pkgname))
-                result = resolve_depends(repository, pkgbase, result) 
+                result = resolve_depends(repository, pkgbase, result)
     return result
 
 if __name__ == '__main__':
@@ -46,37 +46,30 @@ if __name__ == '__main__':
         rmtree(depends)
     depends.mkdir()
 
+    logger.info('Resolving dependencies ...')
+    pacman_packages = []
+    artifact_packages = []
     for pkgbase, pkgname in all_depends:
         if pkgbase == 'pacman':
-            try:
-                logger.info(f'Downloading {pkgname} with pacman ...')
-                run(['pacman', '--cachedir', depends, '--noconfirm', '-Swdd', pkgname])
-                continue
-            except:
-                raise Exception(f'Failed to download {pkgname} with pacman.')
-
-        connection.connect()
+            pacman_packages.append(pkgname)
+            continue
 
         try:
             status = Status.objects.get(key=pkgbase)
         except:
-            logger.warning('Cannot find {pkgbase} in the database.')
-            status = None
+            raise Exception('Cannot find {pkgbase} in the database.')
 
-        downloaded = False
-        if status is None or datetime.now() - status.timestamp > timedelta(days=1):
-            logger.info(f'Downloading {pkgname} with pacman ...')
-            try:
-                run(['pacman', '--cachedir', depends, '--noconfirm', '-Swdd', f'{config["pacman"]["repository"]}/{pkgname}'])
-                downloaded = True
-            except:
-                if status:
-                    logger.warning(f'Failed to download {pkgname} with pacman.')
-                else:
-                    raise(f'Failed to download {pkgname} with pacman.')
-
-        if not downloaded:
+        if datetime.now() - status.timestamp > timedelta(days=1):
+            pacman_packages.append(f'{config["pacman"]["repository"]}/{pkgname}')
+        else:
             _pkgbase = status.key.split('/')[-1]
-            download_artifact_package(status.workflow, _pkgbase, pkgname)
-            package = [i for i in Path('.').glob('*.pkg.tar.zst')][0]
-            move(package, depends / package.name)
+            artifact_packages.append((status.workflow, _pkgbase, pkgname))
+
+    if len(pacman_packages) > 0:
+        logger.info(f'Downloading {pacman_packages} with pacman ...')
+        run(['pacman', '--cachedir', depends, '--noconfirm', '-Swdd'] + pacman_packages)
+
+    for workflow, pkgbase, pkgname in artifact_packages:
+        download_artifact_package(workflow, pkgbase, pkgname)
+        package = [i for i in Path('.').glob('*.pkg.tar.zst')][-1]
+        move(package, depends / package.name)
