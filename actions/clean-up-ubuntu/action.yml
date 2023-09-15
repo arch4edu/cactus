@@ -1,0 +1,16 @@
+name: "Remove unwanted software in ubuntu-lastest"
+inputs:
+  root:
+    description: 'root where ubuntu is mounted'
+    required: false
+    default: '/ubuntu'
+runs:
+  using: "composite"
+  steps:
+    - shell: bash -e {0}
+      run: |
+        echo ${{ runner.name }}
+        df -h
+        cd ${{ inputs.root }}
+        rm -rf usr/share/dotnet usr/local/lib/android opt/ghc opt/hostedtoolcache/CodeQL
+        df -h
