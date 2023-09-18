@@ -1,0 +1,99 @@
+name: Builder (Github Actions Unsafe)
+
+run-name: Build ${{ inputs.pkgbase }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      pkgbase:
+        description: 'Path to pkgbase'
+        required: true
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux
+      options: --privileged
+      volumes:
+        - /:/ubuntu
+    env:
+      CACTUS_CONFIG: ${{ secrets.CACTUS_CONFIG }}
+
+    steps:
+      - uses: arch4edu/cactus/actions/clean-up-ubuntu@main
+
+      - uses: arch4edu/cactus/actions/upgrade-archlinux@main
+
+      - name: Install runtime dependencies
+        run: pacman -S --noconfirm --needed base-devel devtools dbus git github-cli jq pacman-contrib pyalpm python-mysqlclient wget yq zsh
+
+      - uses: arch4edu/cactus/actions/setup-cactus@main
+
+      - name: Export configurations
+        id: config
+        run: python -m cactus.common.config
+
+      - uses: arch4edu/cactus/actions/update-status@main
+        with:
+          pkgbase: ${{ github.event.inputs.pkgbase }}
+          status: building
+          workflow: ${{ github.run_id }}
+
+      - uses: actions/checkout@master
+        with:
+          repository: ${{ steps.config.outputs.github_repository }}
+          path: repository
+          token: ${{ steps.config.outputs.github_token }}
+
+      - uses: arch4edu/cactus/actions/config-pacman-repository@main
+        with:
+          pacman-repository: ${{ steps.config.outputs.pacman_repository }}
+          keyring-repository: ${{ steps.config.outputs.pacman_keyring_repository }}
+          mirrorlist-repository: ${{ steps.config.outputs.pacman_mirrorlist_repository }}
+
+      - uses: arch4edu/cactus/actions/config-makepkg@main
+
+      - uses: petronny/git-config-user@master
+        with:
+          path: repository
+
+      - name: Configure GitHub CLI
+        run: echo ${{ steps.config.outputs.github_token }} | gh auth login --with-token
+
+      - name: Add path
+        run: echo "$(realpath cactus/builder/bin)" >> $GITHUB_PATH
+
+      - name: Download dependencies
+        run: python -m cactus.builder.download-depends repository ${{ github.event.inputs.pkgbase }}
+
+      - name: Build ${{ github.event.inputs.pkgbase }}
+        uses: arch4edu/cactus/actions/build-package@main
+        id: build
+        with:
+          pkgbase: ${{ github.event.inputs.pkgbase }}
+
+      - uses: arch4edu/cactus/actions/upload-log@main
+        with:
+          pkgbase: ${{ github.event.inputs.pkgbase }}
+
+      - uses: arch4edu/cactus/actions/upload-package@main
+        if: ${{ steps.build.outputs.result == 'built' }}
+        with:
+          pkgbase: ${{ github.event.inputs.pkgbase }}
+
+      - name: Push changes
+        if: ${{ steps.build.outputs.result == 'built' }}
+        run: |
+          cd repository/${{ github.event.inputs.pkgbase }}
+          git-push
+
+      - uses: arch4edu/cactus/actions/update-status@main
+        if: ${{ always() }}
+        with:
+          pkgbase: ${{ github.event.inputs.pkgbase }}
+          status: ${{ steps.build.outputs.result }}
+          workflow: ${{ github.run_id }}
+
+      - uses: arch4edu/cactus/actions/clean@main
