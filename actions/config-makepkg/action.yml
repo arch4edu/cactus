@@ -14,5 +14,8 @@ runs:
         # Revert https://gitlab.archlinux.org/archlinux/devtools/-/commit/b7893a2ca8e09062197129881bce3fd6700a573a
         sed '/yes y/s|.*|pacman -U --noconfirm -- "${pkgnames[@]/#//root/}"|' -i /usr/bin/makechrootpkg
 
+        # Revert https://gitlab.archlinux.org/archlinux/devtools/-/commit/5f4fd52e3836ddddb25a0f9e15d0acfed06f693d
+        sed 's/--slice=.*/--keep-unit/' -i /usr/bin/arch-nspawn
+
         # Disable debug
         sed '/^OPTIONS/s/ debug/ !debug/' -i /usr/share/devtools/makepkg.conf.d/*.conf || sed '/^OPTIONS/s/ debug/ !debug/' -i /usr/share/devtools/makepkg-*.conf
