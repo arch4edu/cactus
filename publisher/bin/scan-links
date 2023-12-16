@@ -4,9 +4,27 @@ import io
 import tarfile
 import tempfile
 
-from Namcap.rules.sodepends import scanlibs
+from elftools.elf.elffile import ELFFile
+from elftools.elf.dynamic import DynamicSection
 from Namcap.util import is_elf
 from pyzstd import decompress_stream
+
+def scanlibs(fileobj):
+    if not is_elf(fileobj):
+        return []
+
+    elffile = ELFFile(fileobj)
+    sharedlibs = []
+    for section in elffile.iter_sections():
+        if not isinstance(section, DynamicSection):
+            continue
+        for tag in section.iter_tags():
+            # DT_NEEDED means shared library
+            if tag.entry.d_tag != 'DT_NEEDED':
+                continue
+            libname = tag.needed
+            sharedlibs.append(libname)
+    return sharedlibs
 
 
 @contextlib.contextmanager
@@ -28,7 +46,7 @@ def get_sodepends(package):
         files = [i for i in tar.getmembers() if i.isfile()]
         for file in files:
             file = tar.extractfile(file)
-            sodepends.update(scanlibs(file, "", {}).keys())
+            sodepends.update(scanlibs(file))
         sodepends = sorted([i for i in sodepends if not i in pkg_so_files])
     return sodepends
 
