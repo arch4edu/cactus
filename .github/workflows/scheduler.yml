@@ -16,7 +16,7 @@ jobs:
       - uses: arch4edu/cactus/actions/upgrade-archlinux@main
 
       - name: Install runtime dependencies
-        run: pacman -S --noconfirm --needed git python-mysqlclient
+        run: pacman -S --noconfirm --needed git python-mysqlclient python-typing_extensions
 
       - uses: arch4edu/cactus/actions/setup-cactus@main
 
