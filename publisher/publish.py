@@ -24,6 +24,7 @@ if __name__ == '__main__':
 
         download_artifact_package(workflow, pkgbase)
 
+        connection.connect()
         for package_record in Package.objects.filter(key=record.key):
             package_record.age += 1
             package_record.save()
