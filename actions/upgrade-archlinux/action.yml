@@ -23,6 +23,10 @@ runs:
         key: pacman-package-${{ inputs.arch }}-${{ steps.time.outputs.time }}
         restore-keys: pacman-package-${{ inputs.arch }}-
 
+    - name: Generate default secret key
+      shell: bash -e {0}
+      run: pacman-key --init
+
     - name: Upgrade the system
       shell: bash -e {0}
       run: pacman -Syu --noconfirm
