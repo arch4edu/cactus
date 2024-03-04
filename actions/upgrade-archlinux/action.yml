@@ -32,6 +32,6 @@ runs:
       run: pacman -Syu --noconfirm
 
     - name: Cleanup pacman cache
-      uses: webiny/action-post-run@3.0.0
+      uses: webiny/action-post-run@3.1.0
       with:
         run: pacman -Sc --noconfirm
