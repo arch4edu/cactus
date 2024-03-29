@@ -9,8 +9,23 @@ runs:
   steps:
     - shell: bash -e {0}
       run: |
-        echo ${{ runner.name }}
         df -h
+
         cd ${{ inputs.root }}
-        rm -rf usr/share/dotnet usr/local/lib/android opt/ghc opt/hostedtoolcache/CodeQL
+
+        arch-chroot /ubuntu apt-get autoremove -y \
+          gcc g++ gcc-{9,10,11,12,13} g++-{9,10,11,12,13} \
+          llvm-{13,14,15} clang-{13,14,15} clang-format-{13,14,15} \
+          dotnet-sdk-{6,7,8}.0 mono-complete \
+          java-common temurin-{8,11,17,21}-jdk \
+          php8.1\* ruby \
+          mysql-client mysql-server \
+          google-cloud-cli azure-cli \
+          microsoft-edge-stable google-chrome-stable firefox
+
+        arch-chroot /ubuntu dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n
+
+        du -csh usr/local/lib/android opt/hostedtoolcache/CodeQL
+        rm -rf usr/local/lib/android opt/hostedtoolcache/CodeQL
+
         df -h

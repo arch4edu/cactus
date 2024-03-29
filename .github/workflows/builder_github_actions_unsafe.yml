@@ -22,12 +22,12 @@ jobs:
       CACTUS_CONFIG: ${{ secrets.CACTUS_CONFIG }}
 
     steps:
-      - uses: arch4edu/cactus/actions/clean-up-ubuntu@main
-
       - uses: arch4edu/cactus/actions/upgrade-archlinux@main
 
       - name: Install runtime dependencies
-        run: pacman -S --noconfirm --needed base-devel devtools dbus git github-cli jq pacman-contrib pyalpm python-mysqlclient wget yq zsh
+        run: pacman -S --noconfirm --needed arch-install-scripts base-devel devtools dbus git github-cli jq pacman-contrib pyalpm python-mysqlclient wget yq zsh
+
+      - uses: arch4edu/cactus/actions/clean-up-ubuntu@main
 
       - uses: arch4edu/cactus/actions/setup-cactus@main
 
