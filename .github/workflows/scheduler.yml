@@ -25,11 +25,13 @@ jobs:
       - name: Scheduling
         id: schedule
         run: |
-          for i in $(seq 55)
-          do
-            (cd repository; git pull --rebase)
-            python -m cactus.scheduler.schedule repository
-            sleep 300
+          start_time=$(date +%s)
+          while [ $(( $(date +%s) - start_time )) -lt $(( 5 * 3600 )) ]; do
+              (cd repository; git pull --rebase)
+              python -m cactus.scheduler.schedule repository
+              current_time=$(date +%s)
+              program_runtime=$(($current_time - $start_time))
+              sleep 300
           done
           echo "result=success" >> $GITHUB_OUTPUT
 
