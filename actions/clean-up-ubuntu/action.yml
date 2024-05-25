@@ -7,18 +7,25 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - uses: webiny/action-post-run@3.1.0
+      with:
+        run: sh -c "arch-chroot ${{ inputs.root }} dpkg-query -Wf '${Installed-Size}\t${Package}\t${Status}\n' | grep installed | sort -n"
+
     - shell: bash -e {0}
       run: |
         df -h
 
+        arch-chroot ${{ inputs.root }} dpkg-query -Wf '${Package}\t${Status}\n' | grep installed | cut -f1 > /tmp/ubuntu-packages.txt
+
         arch-chroot ${{ inputs.root }} apt-get autoremove -y \
-          gcc g++ gcc-{9,10,11,12,13} g++-{9,10,11,12,13} \
-          llvm-{13,14,15} clang-{13,14,15} clang-format-{13,14,15} \
-          dotnet-sdk-{6,7,8}.0 mono-complete \
+          gcc g++ gcc-{9,10,11,12} g++-{9,10,11,12} \
+          llvm-{13,14,15} clang-{13,14,15} clang-format-{13,14,15} libllvm{13,14,15} lld-{13,14,15}\
+          dotnet-sdk-{6,7,8}.0 $(grep -P 'libmono-' /tmp/ubuntu-packages.txt) \
           java-common temurin-{8,11,17,21}-jdk \
-          php8.1\* ruby \
+          $(grep php8.1 /tmp/ubuntu-packages.txt) ruby \
+          $(grep -P '^r-' /tmp/ubuntu-packages.txt) \
           mysql-client mysql-server \
-          google-cloud-cli azure-cli \
+          google-cloud-cli azure-cli powershell\
           microsoft-edge-stable google-chrome-stable firefox
 
         cd ${{ inputs.root }}
@@ -31,7 +38,3 @@ runs:
         done
 
         df -h
-
-    - uses: webiny/action-post-run@3.1.0
-      with:
-        run: sh -c "arch-chroot ${{ inputs.root }} dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n"
