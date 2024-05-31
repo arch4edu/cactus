@@ -30,7 +30,7 @@ runs:
 
         cd ${{ inputs.root }}
 
-        for i in usr/local/lib/android opt/hostedtoolcache/CodeQL
+        for i in usr/local/lib/android opt/hostedtoolcache/CodeQL usr/share/swift usr/local/.ghcup usr/share/miniconda usr/local/julia* usr/local/share/powershell usr/local/share/chromium opt/hostedtoolcache/Python opt/hostedtoolcache/go opt/hostedtoolcache/PyPy home/runneradmin/.rustup etc/skel/.rustup home/runner/.rustup
         do
           [ ! -d $i ] && continue
           du -sh $i
