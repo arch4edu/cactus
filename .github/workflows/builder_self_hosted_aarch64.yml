@@ -76,7 +76,7 @@ jobs:
         run: python -m cactus.builder.download-depends repository ${{ github.event.inputs.pkgbase }}
 
       - name: Collect Telemetry
-        uses: catchpoint/workflow-telemetry-action@v2
+        uses: catchpoint/workflow-telemetry-action@master
 
       - name: Build ${{ github.event.inputs.pkgbase }}
         uses: arch4edu/cactus/actions/build-package@main
