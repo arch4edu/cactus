@@ -19,7 +19,7 @@ runs:
       shell: bash -e {0}
       run: echo "basename=$(basename ${{ inputs.pkgbase }})" >> $GITHUB_OUTPUT
 
-    - uses: actions/upload-artifact@master
+    - uses: actions/upload-artifact@main
       with:
         name: ${{ steps.basename.outputs.basename }}.package
         path: repository/${{ inputs.pkgbase }}/*.pkg.tar.zst

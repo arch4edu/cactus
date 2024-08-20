@@ -11,7 +11,7 @@ runs:
       shell: bash -e {0}
       run: echo "basename=$(basename ${{ inputs.pkgbase }})" >> $GITHUB_OUTPUT
 
-    - uses: actions/upload-artifact@master
+    - uses: actions/upload-artifact@main
       if: ${{ always() }}
       with:
         name: ${{ steps.basename.outputs.basename }}.log

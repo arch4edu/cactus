@@ -12,11 +12,11 @@ runs:
           python-tornado \
           python-yaml
 
-    - uses: actions/checkout@master
+    - uses: actions/checkout@main
       with:
         path: cactus
 
-    - uses: actions/checkout@master
+    - uses: actions/checkout@main
       with:
         repository: petronny/djangorm
         path: djangorm

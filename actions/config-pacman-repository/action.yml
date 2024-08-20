@@ -12,12 +12,12 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/checkout@master
+    - uses: actions/checkout@main
       with:
         repository: ${{ inputs.keyring-repository }}
         path: keyring
 
-    - uses: actions/checkout@master
+    - uses: actions/checkout@main
       with:
         repository: ${{ inputs.mirrorlist-repository }}
         path: mirrorlist

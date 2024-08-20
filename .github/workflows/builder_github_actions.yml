@@ -37,7 +37,7 @@ jobs:
           status: building
           workflow: ${{ github.run_id }}
 
-      - uses: actions/checkout@master
+      - uses: actions/checkout@main
         with:
           repository: ${{ steps.config.outputs.github_repository }}
           path: repository
