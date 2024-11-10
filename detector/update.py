@@ -81,6 +81,7 @@ if __name__ == '__main__':
             status.delete()
             continue
 
+        status.timestamp = status.timestamp.replace(tzinfo=None)
         print(datetime.now().tzinfo, status.timestamp.tzinfo) # Debug
 
         if status.status in ['', 'BUILT', 'PUBLISHED']:
