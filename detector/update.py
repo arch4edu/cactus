@@ -81,6 +81,8 @@ if __name__ == '__main__':
             status.delete()
             continue
 
+        print(datetime.now().tzinfo, status.timestamp.tzinfo) # Debug
+
         if status.status in ['', 'BUILT', 'PUBLISHED']:
             status.status = 'STALE'
             status.save()
