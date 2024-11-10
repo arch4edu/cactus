@@ -53,3 +53,8 @@ opencv:
   archpkg: opencv
   from_pattern: '^(\d+\.\d+)\..*'
   to_pattern: '\1'
+poppler:
+  source: archpkg
+  archpkg: poppler
+  provided: libpoppler.so
+  strip_release: true
