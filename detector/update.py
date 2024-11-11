@@ -1,7 +1,6 @@
 #!/bin/python
 
 if __name__ == '__main__':
-    import os
     import sys
     import json
     from datetime import datetime, timedelta
@@ -82,7 +81,6 @@ if __name__ == '__main__':
             continue
 
         status.timestamp = status.timestamp.replace(tzinfo=None)
-        print(datetime.now().tzinfo, status.timestamp.tzinfo) # Debug
 
         if status.status in ['', 'BUILT', 'PUBLISHED']:
             status.status = 'STALE'
