@@ -80,7 +80,7 @@ if __name__ == '__main__':
             status.delete()
             continue
 
-        status.timestamp = status.timestamp.replace(tzinfo=None)
+        # status.timestamp = status.timestamp.replace(tzinfo=None)
 
         if status.status in ['', 'BUILT', 'PUBLISHED']:
             status.status = 'STALE'
