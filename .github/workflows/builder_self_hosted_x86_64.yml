@@ -71,7 +71,10 @@ jobs:
         run: echo "$(realpath cactus/builder/bin)" >> $GITHUB_PATH
 
       - name: Download dependencies
-        run: python -m cactus.builder.download-depends repository ${{ github.event.inputs.pkgbase }}
+        run: |
+          # See https://github.com/arch4edu/cactus/issues/10
+          sed 's/^#DisableSandbox/DisableSandbox/' -i /etc/pacman.conf || :
+          python -m cactus.builder.download-depends repository ${{ github.event.inputs.pkgbase }}
 
       - name: Collect telemetry
         uses: catchpoint/workflow-telemetry-action@master
