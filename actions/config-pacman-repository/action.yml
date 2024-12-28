@@ -31,6 +31,7 @@ runs:
         echo [${{ inputs.pacman-repository }}] >> /etc/pacman.conf
         echo Include = /etc/pacman.d/mirrorlist.${{ inputs.pacman-repository }} >> /etc/pacman.conf
         sed 's/^#DisableSandbox/DisableSandbox/' -i /etc/pacman.conf || :
+        sed 's/^DownloadUser/#DownloadUser/' -i /etc/pacman.conf || :
         sed 's/#//' -i mirrorlist/*mirrorlist*
         rankmirrors -r ${{ inputs.pacman-repository }} mirrorlist/*mirrorlist* | sed -n '/^#/b;p' | tee /etc/pacman.d/mirrorlist.${{ inputs.pacman-repository }}
         pacman -Sy
