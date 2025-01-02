@@ -27,6 +27,13 @@ runs:
       shell: bash -e {0}
       run: pacman-key --init
 
+    - name: Disable the default sandbox
+      shell: bash -e {0}
+      run: |
+        # See https://github.com/arch4edu/cactus/issues/10
+        sed 's/^#DisableSandbox/DisableSandbox/' -i /etc/pacman.conf || :
+        sed 's/^DownloadUser/#DownloadUser/' -i /etc/pacman.conf || :
+
     - name: Upgrade the system
       shell: bash -e {0}
       run: pacman -Syu --noconfirm
