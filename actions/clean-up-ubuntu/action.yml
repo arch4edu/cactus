@@ -20,7 +20,7 @@ runs:
         arch-chroot ${{ inputs.root }} apt-get autoremove -y \
           gcc g++ gcc-{9,10,11,12,13,14} g++-{9,10,11,12,13,14} \
           llvm-{14,15,16,17,18} clang-{14,15,16,17,18} clang-format-{14,15,16,17,18} libllvm{14,15,16,17,18} lld-{14,15,16,17,18} \
-          dotnet-sdk-{8}.0 $(grep -P 'libmono-' /tmp/ubuntu-packages.txt) \
+          dotnet-sdk-8.0 $(grep -P 'libmono-' /tmp/ubuntu-packages.txt) \
           java-common temurin-{8,11,17,21}-jdk \
           $(grep php8.1 /tmp/ubuntu-packages.txt) ruby \
           $(grep -P '^r-' /tmp/ubuntu-packages.txt) \
