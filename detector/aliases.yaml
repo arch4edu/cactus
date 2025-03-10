@@ -58,3 +58,8 @@ poppler:
   archpkg: poppler
   provided: libpoppler.so
   strip_release: true
+nlopt:
+  source: archpkg
+  archpkg: nlopt
+  provided: libnlopt.so
+  strip_release: true
