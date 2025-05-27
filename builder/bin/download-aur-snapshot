@@ -8,4 +8,8 @@ else
 	pkgbase=$(realpath .)
 	pkgbase=$(basename "${pkgbase}")
 fi
-curl "https://aur.archlinux.org/cgit/aur.git/snapshot/${pkgbase}.tar.gz" | tar zxvf - --strip-components=1
+
+for retry in $(seq 5)
+do
+	(curl "https://aur.archlinux.org/cgit/aur.git/snapshot/${pkgbase}.tar.gz" | tar zxvf - --strip-components=1) && break || continue
+done
