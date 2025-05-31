@@ -16,6 +16,8 @@ jobs:
     container:
       image: archlinux
       options: --privileged
+      ports:
+        - 7777
     env:
       CACTUS_CONFIG: ${{ secrets.CACTUS_CONFIG }}
 
