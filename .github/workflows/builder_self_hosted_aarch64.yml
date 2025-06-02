@@ -30,6 +30,7 @@ jobs:
           rm -rf /var/lib/pacman/sync
           ln -sf /mnt/sync /var/lib/pacman/sync
           sed '/\[community\]/,+2d' -i /etc/pacman.conf || :
+          echo 'Server = https://archlinuxarm.arch4edu.org/$arch/$repo' > /etc/pacman.d/mirrorlist
           pacman-key --init
           pacman-key --populate archlinuxarm
           pacman -Syu --noconfirm
