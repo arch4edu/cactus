@@ -1,0 +1,22 @@
+#!/usr/bin/python
+#!/usr/bin/python
+import subprocess
+import argparse
+
+parser = argparse.ArgumentParser(description='Replace a string in PKGBUILD')
+parser.add_argument('--update', '-u', action='store_true', help='Update PKGBUILD checksums')
+parser.add_argument('--check', '-c', action='store_true', help='Exit with code 1 if the old string is not found in PKGBUILD')
+parser.add_argument('old_string', help='The string to be replaced')
+parser.add_argument('new_string', help='The string to replace with')
+args = parser.parse_args()
+
+with open('PKGBUILD') as f:
+    pkgbuild = f.read()
+
+if args.old_string in pkgbuild:
+    with open('PKGBUILD', 'w') as f:
+        f.write(pkgbuild.replace(args.old_string, args.new_string, 1))
+    if args.update:
+        subprocess.run(['updpkgsums'])
+elif args.check:
+    exit(1)
