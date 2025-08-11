@@ -63,3 +63,8 @@ nlopt:
   archpkg: nlopt
   provided: libnlopt.so
   strip_release: true
+libxml2:
+  source: archpkg
+  archpkg: libxml2
+  from_pattern: '^(\d+\.\d+)\..*'
+  to_pattern: '\1'
