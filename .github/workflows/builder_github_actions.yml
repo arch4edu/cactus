@@ -67,7 +67,7 @@ jobs:
         run: python -m cactus.builder.download-depends repository ${{ github.event.inputs.pkgbase }}
 
       - name: Collect telemetry
-        uses: petronny/workflow-telemetry-action@master
+        uses: petronny/workflow-telemetry-action@quickchart
 
       - name: Build ${{ github.event.inputs.pkgbase }}
         uses: arch4edu/cactus/actions/build-package@main
