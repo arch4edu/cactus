@@ -34,15 +34,7 @@ jobs:
           pacman-key --init
           pacman-key --populate archlinuxarm
           pacman -Syu --noconfirm
-          pacman -S --noconfirm --needed --assume-installed python-dulwich base-devel devtools-alarm devtools-arch4edu-extra dbus git github-cli jq pacman-contrib pyalpm python-mysqlclient wget yq zsh
-
-          # Adjust devtools-arch4edu-extra configurations to proper locations
-          if [ -f /usr/share/devtools/makepkg-aarch64.conf ]; then
-            mv -f /usr/share/devtools/makepkg-aarch64.conf /usr/share/devtools/makepkg.conf.d/aarch64.conf
-          fi
-          if [ -f /usr/share/devtools/pacman-extra-aarch64.conf ]; then
-            mv -f /usr/share/devtools/pacman-extra-aarch64.conf /usr/share/devtools/pacman.conf.d/extra-aarch64.conf
-          fi
+          pacman -S --noconfirm --needed base-devel devtools-alarm dbus git github-cli jq pacman-contrib pyalpm python-mysqlclient python-dulwich wget yq zsh
 
       - uses: arch4edu/cactus/actions/setup-cactus@main
 
@@ -67,6 +59,16 @@ jobs:
           pacman-repository: ${{ steps.config.outputs.pacman_repository }}
           keyring-repository: ${{ steps.config.outputs.pacman_keyring_repository }}
           mirrorlist-repository: ${{ steps.config.outputs.pacman_mirrorlist_repository }}
+
+      - name: Install devtools-arch4edu-extra and adjust configs
+        run: |
+          pacman -S --noconfirm --needed devtools-arch4edu-extra
+          if [ -f /usr/share/devtools/makepkg-aarch64.conf ]; then
+            mv -f /usr/share/devtools/makepkg-aarch64.conf /usr/share/devtools/makepkg.conf.d/aarch64.conf
+          fi
+          if [ -f /usr/share/devtools/pacman-extra-aarch64.conf ]; then
+            mv -f /usr/share/devtools/pacman-extra-aarch64.conf /usr/share/devtools/pacman.conf.d/extra-aarch64.conf
+          fi
 
       - uses: arch4edu/cactus/actions/config-makepkg@main
 
