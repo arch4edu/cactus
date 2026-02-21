@@ -68,6 +68,8 @@ jobs:
           fi
           if [ -f /usr/share/devtools/pacman-extra-aarch64.conf ]; then
             mv -f /usr/share/devtools/pacman-extra-aarch64.conf /usr/share/devtools/pacman.conf.d/extra-aarch64.conf
+            # Fix CacheDir: remove erroneous aarch64 suffix
+            sed -i 's|/var/cache/pacman/pkg/aarch64|/var/cache/pacman/pkg|g' /usr/share/devtools/pacman.conf.d/extra-aarch64.conf || true
           fi
 
       - uses: arch4edu/cactus/actions/config-makepkg@main
