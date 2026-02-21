@@ -36,6 +36,14 @@ jobs:
           pacman -Syu --noconfirm
           pacman -S --noconfirm --needed --assume-installed python-dulwich base-devel devtools-alarm devtools-arch4edu-extra dbus git github-cli jq pacman-contrib pyalpm python-mysqlclient wget yq zsh
 
+          # Adjust devtools-arch4edu-extra configurations to proper locations
+          if [ -f /usr/share/devtools/makepkg-aarch64.conf ]; then
+            install -Dm644 /usr/share/devtools/makepkg-aarch64.conf /usr/share/devtools/makepkg.conf.d/aarch64.conf
+          fi
+          if [ -f /usr/share/devtools/pacman-extra-aarch64.conf ]; then
+            install -Dm644 /usr/share/devtools/pacman-extra-aarch64.conf /usr/share/devtools/pacman.conf.d/extra-aarch64.conf
+          fi
+
       - uses: arch4edu/cactus/actions/setup-cactus@main
 
       - name: Export configurations
