@@ -98,5 +98,6 @@ jobs:
           pkgbase: ${{ github.event.inputs.pkgbase }}
           status: ${{ steps.build.outputs.result }}
           workflow: ${{ github.run_id }}
+          detail: ${{ steps.build.outputs.detail }}
 
       - uses: arch4edu/cactus/actions/clean@main

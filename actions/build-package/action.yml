@@ -1,12 +1,19 @@
-name: "Upgrade archlinux"
+name: "Build package"
+description: "Build package in chroot environment"
+
 inputs:
   pkgbase:
-    description: 'pkgbase'
+    description: 'Package base path (e.g., x86_64/gtk2)'
     required: true
+
 outputs:
   result:
-    description: "Build result"
+    description: "Build result (built/failed)"
     value: ${{ steps.build.outputs.result }}
+  detail:
+    description: "Error details on failure"
+    value: ${{ steps.build.outputs.detail }}
+
 runs:
   using: "composite"
   steps:
@@ -16,9 +23,17 @@ runs:
         chown -R makepkg:root repository
         cd repository/${{ inputs.pkgbase }}
         su makepkg -c cactus-build | tee build.log
-        if [ $(grep -c 'Cactus has successfully built the package.' build.log) -gt 0 ]
-        then
+        if grep -q 'Cactus has successfully built the package.' build.log; then
           echo "result=built" >> $GITHUB_OUTPUT
+          echo "detail=" >> $GITHUB_OUTPUT
         else
           echo "result=failed" >> $GITHUB_OUTPUT
+          # Extract missing dependencies
+          DETAIL=""
+          if [ -f "build.log" ]; then
+            PKGS=$(grep -oP "error: target not found:\s*\K[^ ]+" build.log | paste -sd, -)
+            [ -n "$PKGS" ] && DETAIL="Missing dependencies: $PKGS"
+          fi
+          [ -z "$DETAIL" ] && DETAIL="Build failed."
+          echo "detail=$DETAIL" >> $GITHUB_OUTPUT
         fi
