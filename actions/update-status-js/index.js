@@ -59,7 +59,7 @@ async function main() {
     await connection.beginTransaction();
 
     const [r1] = await connection.execute(
-      `INSERT INTO Status (key, status, detail, workflow, timestamp)
+      `INSERT INTO cactus_status (\`key\`, status, detail, workflow, timestamp)
        VALUES (?, ?, ?, ?, NOW())
        ON DUPLICATE KEY UPDATE status = VALUES(status), detail = VALUES(detail), workflow = VALUES(workflow), timestamp = NOW()`,
       [pkgbase, dbStatus, dbDetail || '', workflow]
@@ -68,7 +68,7 @@ async function main() {
 
     if (status === 'built') {
       const [r2] = await connection.execute(
-        'UPDATE Version SET oldver = newver WHERE key LIKE ?',
+        'UPDATE cactus_version SET oldver = newver WHERE \`key\` LIKE ?',
         [pkgbase + '%']
       );
       console.log(`🔄 Version: ${r2.affectedRows} rows`);
