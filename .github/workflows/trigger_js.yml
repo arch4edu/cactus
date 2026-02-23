@@ -1,0 +1,25 @@
+name: Trigger rebuild (JS)
+
+run-name: Trigger rebuild (JS) for ${{ inputs.pkgbase }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      pkgbase:
+        description: 'Path to pkgbase'
+        required: true
+
+jobs:
+
+  test:
+    runs-on: ubuntu-latest
+    env:
+      CACTUS_CONFIG: ${{ secrets.CACTUS_CONFIG }}
+
+    steps:
+      - name: Update status (JS)
+        uses: arch4edu/cactus/actions/update-status-js@main
+        with:
+          pkgbase: ${{ github.event.inputs.pkgbase }}
+          status: building
+          workflow: ${{ github.run_id }}
