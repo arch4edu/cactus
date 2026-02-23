@@ -27709,7 +27709,7 @@ var __webpack_exports__ = {};
 const yaml = __nccwpck_require__(5080);
 const mysql = __nccwpck_require__(2599);
 
-const PKGBASE_REGEX = /^[a-zA-Z0-9_\/-]+$/;
+const PKGBASE_REGEX = /^[a-zA-Z0-9_\/.-]+$/;
 const STATUS_MAP = {
   built: { status: 'BUILT', detail: '' },
   building: { status: 'BUILDING', detail: null },

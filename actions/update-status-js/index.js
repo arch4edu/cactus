@@ -3,7 +3,7 @@
 const yaml = require('js-yaml');
 const mysql = require('mysql2/promise');
 
-const PKGBASE_REGEX = /^[a-zA-Z0-9_\/-]+$/;
+const PKGBASE_REGEX = /^[a-zA-Z0-9_\/.-]+$/;
 const STATUS_MAP = {
   built: { status: 'BUILT', detail: '' },
   building: { status: 'BUILDING', detail: null },
