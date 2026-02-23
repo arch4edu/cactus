@@ -1,0 +1,22 @@
+name: "Update status (JS)"
+description: "Update build status in the database using pure JavaScript with MySQL2"
+author: "arch4edu"
+
+inputs:
+  pkgbase:
+    description: 'Package base path (e.g., aarch64/libsearpc)'
+    required: true
+  status:
+    description: 'Build status (built, building, failed)'
+    required: true
+    default: 'failed'
+  workflow:
+    description: 'Workflow run ID'
+    required: true
+  config:
+    description: 'CACTUS_CONFIG YAML string (optional, uses CACTUS_CONFIG env by default)'
+    required: false
+
+runs:
+  using: "node16"
+  main: "index.js"
