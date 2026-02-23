@@ -27721,6 +27721,7 @@ async function main() {
   const pkgbase = (process.env.INPUT_PKGBASE || '').trim();
   const status = (process.env.INPUT_STATUS || 'failed').trim().toLowerCase();
   const workflow = (process.env.INPUT_WORKFLOW || '').trim();
+  const detailInput = process.env.INPUT_DETAIL?.trim();
 
   if (!pkgbase || !workflow) {
     console.error('❌ Missing required inputs');
@@ -27751,8 +27752,11 @@ async function main() {
     process.exit(1);
   }
 
-  const { status: dbStatus, detail: dbDetail } = STATUS_MAP[status] || STATUS_MAP.failed;
-  console.log(`✅ ${pkgbase} → ${dbStatus}`);
+  const { status: dbStatus, detail: defaultDetail } = STATUS_MAP[status] || STATUS_MAP.failed;
+  // Use provided detail if present, otherwise use default from STATUS_MAP
+  const detail = detailInput !== undefined ? detailInput : defaultDetail;
+
+  console.log(`✅ ${pkgbase} → ${dbStatus}${detail ? ` (detail: ${detail})` : ''}`);
 
   const connection = await mysql.createConnection({
     host: db.HOST,
@@ -27765,11 +27769,14 @@ async function main() {
   try {
     await connection.beginTransaction();
 
+    // Handle NULL for detail (e.g., building status)
+    const detailValue = detail === null ? null : String(detail || '');
+
     const [r1] = await connection.execute(
       `INSERT INTO cactus_status (\`key\`, status, detail, workflow, timestamp)
        VALUES (?, ?, ?, ?, NOW())
        ON DUPLICATE KEY UPDATE status = VALUES(status), detail = VALUES(detail), workflow = VALUES(workflow), timestamp = NOW()`,
-      [pkgbase, dbStatus, dbDetail || '', workflow]
+      [pkgbase, dbStatus, detailValue, workflow]
     );
     console.log(`📝 Status: ${r1.affectedRows} rows`);
 

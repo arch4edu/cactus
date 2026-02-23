@@ -7,12 +7,15 @@ inputs:
     description: 'Package base path (e.g., aarch64/libsearpc)'
     required: true
   status:
-    description: 'Build status (built, building, failed)'
+    description: 'Build status (built, building, failed, stale)'
     required: true
     default: 'failed'
   workflow:
     description: 'Workflow run ID'
     required: true
+  detail:
+    description: 'Optional detail message for failed builds (e.g., missing dependencies)'
+    required: false
   config:
     description: 'CACTUS_CONFIG YAML string (optional, uses CACTUS_CONFIG env by default)'
     required: false
