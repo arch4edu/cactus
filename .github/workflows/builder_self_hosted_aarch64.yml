@@ -24,6 +24,12 @@ jobs:
       CACTUS_CONFIG: ${{ secrets.CACTUS_CONFIG }}
 
     steps:
+      - uses: arch4edu/cactus/actions/update-status-js@main
+        with:
+          pkgbase: ${{ github.event.inputs.pkgbase }}
+          status: building
+          workflow: ${{ github.run_id }}
+
       - name: Install runtime dependencies
         run: |
           mkdir -p /mnt/sync /var/lib/pacman
@@ -41,12 +47,6 @@ jobs:
       - name: Export configurations
         id: config
         run: python -m cactus.common.config
-
-      - uses: arch4edu/cactus/actions/update-status@main
-        with:
-          pkgbase: ${{ github.event.inputs.pkgbase }}
-          status: building
-          workflow: ${{ github.run_id }}
 
       - uses: actions/checkout@main
         with:
@@ -111,7 +111,7 @@ jobs:
           cd repository/${{ github.event.inputs.pkgbase }}
           git-push
 
-      - uses: arch4edu/cactus/actions/update-status@main
+      - uses: arch4edu/cactus/actions/update-status-js@main
         if: ${{ always() }}
         with:
           pkgbase: ${{ github.event.inputs.pkgbase }}
