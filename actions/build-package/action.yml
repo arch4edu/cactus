@@ -28,12 +28,7 @@ runs:
           echo "detail=" >> $GITHUB_OUTPUT
         else
           echo "result=failed" >> $GITHUB_OUTPUT
-          # Extract missing dependencies
-          DETAIL=""
-          if [ -f "build.log" ]; then
-            PKGS=$(grep -oP "error: target not found:\s*\K[^ ]+" build.log | paste -sd, -)
-            [ -n "$PKGS" ] && DETAIL="Missing dependencies: $PKGS"
-          fi
-          [ -z "$DETAIL" ] && DETAIL="Build failed."
+          # Extract missing dependencies using Python script
+          DETAIL="$(python3 cactus/builder/bin/extract-build-detail)"
           echo "detail=$DETAIL" >> $GITHUB_OUTPUT
         fi
