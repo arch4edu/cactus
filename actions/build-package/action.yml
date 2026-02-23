@@ -28,7 +28,7 @@ runs:
           echo "detail=" >> $GITHUB_OUTPUT
         else
           echo "result=failed" >> $GITHUB_OUTPUT
-          # Extract missing dependencies using Python script
-          DETAIL="$(python3 cactus/builder/bin/extract-build-detail)"
+          # Extract missing dependencies using Python script (available in PATH)
+          DETAIL="$(extract-build-detail)"
           echo "detail=$DETAIL" >> $GITHUB_OUTPUT
         fi
