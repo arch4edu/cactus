@@ -27713,7 +27713,8 @@ const PKGBASE_REGEX = /^[a-zA-Z0-9_\/-]+$/;
 const STATUS_MAP = {
   built: { status: 'BUILT', detail: '' },
   building: { status: 'BUILDING', detail: null },
-  failed: { status: 'FAILED', detail: 'Build failed.' }
+  failed: { status: 'FAILED', detail: 'Build failed.' },
+  stale: { status: 'STALE', detail: '' }
 };
 
 async function main() {
