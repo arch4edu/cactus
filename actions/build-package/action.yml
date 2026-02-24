@@ -20,15 +20,21 @@ runs:
     - shell: bash -e {0}
       id: build
       run: |
-        chown -R makepkg:root repository
         cd repository/${{ inputs.pkgbase }}
+        # Download dependencies (no logging)
+        if ! python -m cactus.builder.download-depends repository ${{ inputs.pkgbase }}; then
+          echo "result=failed" >> $GITHUB_OUTPUT
+          echo "detail=Failed to download dependencies" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        # Build - save output to build.log
+        chown -R makepkg:root repository
         su makepkg -c cactus-build 2>&1 | tee build.log
         if grep -q 'Cactus has successfully built the package.' build.log; then
           echo "result=built" >> $GITHUB_OUTPUT
           echo "detail=" >> $GITHUB_OUTPUT
         else
           echo "result=failed" >> $GITHUB_OUTPUT
-          # Extract missing dependencies using Python script (available in PATH)
           DETAIL="$(extract-build-detail)"
           echo "detail=$DETAIL" >> $GITHUB_OUTPUT
         fi
