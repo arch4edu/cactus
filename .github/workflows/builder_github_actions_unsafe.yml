@@ -65,9 +65,6 @@ jobs:
       - name: Add path
         run: echo "$(realpath cactus/builder/bin)" >> $GITHUB_PATH
 
-      - name: Download dependencies
-        run: python -m cactus.builder.download-depends repository ${{ github.event.inputs.pkgbase }}
-
       - name: Collect telemetry
         uses: petronny/workflow-telemetry-action@quickchart
 
