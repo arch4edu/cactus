@@ -2,6 +2,7 @@
 """
 Extract error detail from build.log in current directory.
 Outputs a single line description to stdout.
+优先提取 "error: target not found:" 中的包名，避免匹配到成功构建时的无关信息。
 """
 
 import sys
@@ -9,19 +10,23 @@ import re
 from pathlib import Path
 
 def extract_detail() -> str:
-    """Extract missing dependencies or generic failure message."""
+    """Extract missing dependencies from error messages."""
     log_file = Path("build.log")
     if not log_file.exists():
+        print(f"DEBUG: build.log not found in {Path.cwd()}", file=sys.stderr)
         return "Build failed."
     
     try:
         content = log_file.read_text()
-        # Find all "error: target not found: <pkg>"
+        # 优先匹配失败时的错误：error: target not found: <pkg>
+        # 这些错误通常出现在 pacman 安装依赖失败时
         missing = re.findall(r"error: target not found:\s*(\S+)", content)
+        print(f"DEBUG: matched packages = {missing}", file=sys.stderr)
         if missing:
             pkgs = sorted(set(missing))
             return f"Missing dependencies: {', '.join(pkgs)}"
-    except Exception:
+    except Exception as e:
+        print(f"DEBUG: exception: {e}", file=sys.stderr)
         pass
     
     return "Build failed."
