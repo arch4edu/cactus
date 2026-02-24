@@ -22,7 +22,7 @@ runs:
       run: |
         chown -R makepkg:root repository
         cd repository/${{ inputs.pkgbase }}
-        su makepkg -c cactus-build | tee build.log
+        su makepkg -c cactus-build 2>&1 | tee build.log
         if grep -q 'Cactus has successfully built the package.' build.log; then
           echo "result=built" >> $GITHUB_OUTPUT
           echo "detail=" >> $GITHUB_OUTPUT

@@ -10,33 +10,22 @@ from pathlib import Path
 def extract_detail() -> str:
     log_file = Path("build.log")
     if not log_file.exists():
-        print(f"DEBUG: build.log not found in {Path.cwd()}", file=sys.stderr)
         return "Build failed."
     
     try:
-        # Read with error handling for encoding
+        # Read file (handle encoding)
         try:
             content = log_file.read_text(encoding='utf-8', errors='replace')
         except:
             content = log_file.read_bytes().decode('utf-8', errors='replace')
         
-        print(f"DEBUG: file size = {len(content)} bytes", file=sys.stderr)
-        
-        # Look for the pattern
+        # Match "error: target not found: <pkg>"
         missing = re.findall(r"error: target not found:\s*(\S+)", content)
-        print(f"DEBUG: matched = {missing}", file=sys.stderr)
-        
         if missing:
             pkgs = sorted(set(missing))
             return f"Missing dependencies: {', '.join(pkgs)}"
-        
-        # Alternative: search for lines containing both "error:" and "target not found"
-        lines = content.splitlines()
-        candidates = [l for l in lines if 'error:' in l.lower() and 'target not found' in l.lower()]
-        if candidates:
-            print(f"DEBUG: candidate lines = {candidates[:3]}", file=sys.stderr)
-    except Exception as e:
-        print(f"DEBUG: exception: {e}", file=sys.stderr)
+    except Exception:
+        pass
     
     return "Build failed."
 
