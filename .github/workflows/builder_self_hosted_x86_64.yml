@@ -60,6 +60,9 @@ jobs:
 
       - uses: arch4edu/cactus/actions/config-makepkg@main
 
+      - name: Install devtools-arch4edu-extra
+        run: pacman -S --noconfirm --needed devtools-arch4edu-extra
+
       - uses: petronny/git-config-user@master
         with:
           path: repository
