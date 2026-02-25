@@ -26,9 +26,8 @@ runs:
           echo "detail=Failed to download dependencies" >> $GITHUB_OUTPUT
           exit 0
         fi
-        # Build - save output to build.log
-        cd repository/${{ inputs.pkgbase }}
         chown -R makepkg:root repository
+        cd repository/${{ inputs.pkgbase }}
         su makepkg -c cactus-build 2>&1 | tee build.log
         if grep -q 'Cactus has successfully built the package.' build.log; then
           echo "result=built" >> $GITHUB_OUTPUT
