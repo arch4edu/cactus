@@ -20,7 +20,6 @@ runs:
     - shell: bash -e {0}
       id: build
       run: |
-        cd repository/${{ inputs.pkgbase }}
         # Download dependencies (no logging)
         if ! python -m cactus.builder.download-depends repository ${{ inputs.pkgbase }}; then
           echo "result=failed" >> $GITHUB_OUTPUT
@@ -28,6 +27,7 @@ runs:
           exit 0
         fi
         # Build - save output to build.log
+        cd repository/${{ inputs.pkgbase }}
         chown -R makepkg:root repository
         su makepkg -c cactus-build 2>&1 | tee build.log
         if grep -q 'Cactus has successfully built the package.' build.log; then
