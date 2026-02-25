@@ -24,6 +24,13 @@ def extract_detail() -> str:
         if missing:
             pkgs = sorted(set(missing))
             return f"Missing dependencies: {', '.join(pkgs)}"
+        
+        # Match makepkg stage failures: "==> ERROR: A failure occurred in <stage>()."
+        stage_match = re.search(r"==>\s*ERROR:\s*A failure occurred in\s+(.+?)\(\)\.", content)
+        if stage_match:
+            stage = stage_match.group(1)
+            return f"Failed in {stage}"
+        
     except Exception:
         pass
     
