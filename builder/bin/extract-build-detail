@@ -30,6 +30,8 @@ def extract_detail() -> str:
         if stage_match:
             stage = stage_match.group(1)
             return f"Failed in {stage}()"
+        
+    except Exception:
         pass
     
     return "Build failed."
