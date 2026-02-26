@@ -1,9 +1,13 @@
 #!/bin/python
 import yaml
 
-def load_depends(repository, pkgbase, key='depends'):
+def load_depends(repository, pkgbase, key='depends', pkgname=None):
     with open(repository / pkgbase / 'cactus.yaml') as f:
-        cactus = yaml.safe_load(f)
+        cactus = yaml.safe_load(f) or {}
+    if pkgname is not None:
+        depends = cactus.get(f'{key}_{pkgname}')
+        if depends is not None:
+            return depends
     if not key in cactus:
         return []
     else:
