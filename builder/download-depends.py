@@ -20,12 +20,12 @@ def resolve_depends(repository, pkgbase, result, key='depends', pkgname=None):
             if not (pkgbase, pkgname) in result:
                 result.append((pkgbase, pkgname))
                 if pkgbase != 'pacman' and (not 'recursive' in i or i['recursive']):
-                    result = resolve_depends(repository, pkgbase, result, key=key, pkgname=pkgname)
+                    result = resolve_depends(repository, pkgbase, result, pkgname=pkgname)
         else:
             pkgbase, pkgname = i, i.split('/')[-1]
             if not (pkgbase, pkgname) in result:
                 result.append((pkgbase, pkgname))
-                result = resolve_depends(repository, pkgbase, result, key=key, pkgname=pkgname)
+                result = resolve_depends(repository, pkgbase, result, pkgname=pkgname)
     return result
 
 if __name__ == '__main__':
