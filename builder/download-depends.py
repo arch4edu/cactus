@@ -13,19 +13,19 @@ def load_depends(repository, pkgbase, key='depends', pkgname=None):
     else:
         return cactus[key]
 
-def resolve_depends(repository, pkgbase, result, key='depends'):
-    for i in load_depends(repository, pkgbase, key=key):
+def resolve_depends(repository, pkgbase, result, key='depends', pkgname=None):
+    for i in load_depends(repository, pkgbase, key=key, pkgname=pkgname):
         if type(i) is dict:
             pkgbase, pkgname = list(i.keys())[0], list(i.values())[0]
             if not (pkgbase, pkgname) in result:
                 result.append((pkgbase, pkgname))
                 if pkgbase != 'pacman' and (not 'recursive' in i or i['recursive']):
-                    result = resolve_depends(repository, pkgbase, result)
+                    result = resolve_depends(repository, pkgbase, result, key=key, pkgname=pkgname)
         else:
             pkgbase, pkgname = i, i.split('/')[-1]
             if not (pkgbase, pkgname) in result:
                 result.append((pkgbase, pkgname))
-                result = resolve_depends(repository, pkgbase, result)
+                result = resolve_depends(repository, pkgbase, result, key=key, pkgname=pkgname)
     return result
 
 if __name__ == '__main__':
