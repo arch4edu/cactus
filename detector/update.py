@@ -89,9 +89,6 @@ if __name__ == '__main__':
             status.save()
             logger.debug(f'{key}: try to rebuild {record.newver}')
 
-    if datetime.today().weekday() > 0:
-        sys.exit(0)
-
     logger.info('Removing dropped packages')
 
     for record in Version.objects.filter(newver__exact=F('oldver')):
