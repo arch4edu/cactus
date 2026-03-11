@@ -43,8 +43,11 @@ jobs:
           patch /usr/bin/repo-add < cactus/publisher/repo-add.patch
           echo "$(realpath cactus/publisher/bin)" >> $GITHUB_PATH
 
+      - name: Remove unmaintained packages
+        run: python -m cactus.publisher.clean unmaintained
+
       - name: Publish built packages
         run: python -m cactus.publisher.publish
 
-      - name: Remove old and unmaintained packages
-        run: python -m cactus.publisher.clean
+      - name: Remove old packages
+        run: python -m cactus.publisher.clean old

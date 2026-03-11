@@ -1,8 +1,11 @@
 #!/bin/python
+import sys
 import time
-from django.db import connection
+from pathlib import Path
+
 from .. import config, logger
 from ..common.util import run, parse_package
+from ..models import Status, Version, Package, F
 
 def repo_remove(db, pkgname):
     output = run(['repo-remove', db, pkgname], capture_output=True, check=False)
@@ -32,13 +35,11 @@ def remove_package(package, repository=None):
     run(['ssh', 'repository', 'rm', '-f'] + oldfiles)
     logger.debug('Deleted %s.', oldfiles)
 
-if __name__ == '__main__':
-    from pathlib import Path
-    from ..models import Status, Package
-
+def clean_old():
+    """Remove packages exceeding max-age."""
     repository = Path('repository')
-
     logger.info('Removing old packages ...')
+
     for package in Package.objects.filter(age__gt=config['publisher']['max-age']):
         remove_package(package.package)
         package.delete()
@@ -51,7 +52,11 @@ if __name__ == '__main__':
 
         run(['sh', '-c', f'rsync -avP repository/* repository:{config["publisher"]["path"]}'])
 
+def clean_unmaintained():
+    """Remove packages with no version updates and missing from repository."""
+    repository = Path('repository')
     logger.info('Removing dropped packages ...')
+
     status = Status.objects.all()
     for package in Package.objects.exclude(key__in=status):
         if not repository.exists():
@@ -65,3 +70,16 @@ if __name__ == '__main__':
         run(['sh', '-c', f'rsync -avP repository/* repository:{config["publisher"]["path"]}'])
         package.delete()
         logger.info('Removed %s', package.key)
+
+if __name__ == '__main__':
+    # Determine which phase to run based on first argument
+    phase = sys.argv[1] if len(sys.argv) > 1 else 'all'
+
+    if phase == 'old':
+        clean_old()
+    elif phase == 'unmaintained':
+        clean_unmaintained()
+    else:
+        # Default: run both
+        clean_old()
+        clean_unmaintained()
