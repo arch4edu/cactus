@@ -39,8 +39,8 @@ if __name__ == '__main__':
                 logger.info('Ignored %s', package.name)
                 continue
 
-            move(package, repository / arch)
-            move(signature, repository / arch)
+            move(package, repository / arch / package.name)
+            move(signature, repository / arch / signature.name)
             repo_add(repository, arch, repository / arch / package.name)
 
             if arch == 'any':
