@@ -3,9 +3,10 @@ import sys
 import time
 from pathlib import Path
 
+from django.db.models import F
 from .. import config, logger
 from ..common.util import run, parse_package
-from ..models import Status, Version, Package, F
+from ..models import Status, Version, Package
 
 def repo_remove(db, pkgname):
     output = run(['repo-remove', db, pkgname], capture_output=True, check=False)
