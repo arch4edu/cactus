@@ -59,7 +59,7 @@ def clean_unmaintained():
     repository = Path('repository')
     logger.info('Cleaning database records for dropped packages')
 
-    for record in Version.objects.filter(newver__exact=F('oldver')):
+    for record in Version.objects.all():
         key = record.key[:record.key.find(':')]
         if not (repository / key).exists():
             try:
