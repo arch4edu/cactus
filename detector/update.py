@@ -75,9 +75,6 @@ if __name__ == '__main__':
             status = Status(key=key)
 
         if not (repository / key).exists():
-            logger.warning('Removed %s', key)
-            record.delete()
-            status.delete()
             continue
 
         if status.status in ['', 'BUILT', 'PUBLISHED']:
@@ -88,16 +85,3 @@ if __name__ == '__main__':
             status.status = 'STALE'
             status.save()
             logger.debug(f'{key}: try to rebuild {record.newver}')
-
-    logger.info('Removing dropped packages')
-
-    for record in Version.objects.filter(newver__exact=F('oldver')):
-        key = record.key[:record.key.find(':')]
-        if not (repository / key).exists():
-            try:
-                status = Status.objects.get(key=key)
-                status.delete()
-            except Status.DoesNotExist:
-                pass
-            record.delete()
-            logger.warning('Removed %s', key)

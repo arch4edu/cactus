@@ -38,7 +38,7 @@ def remove_package(package, repository=None):
 
 def clean_old():
     """Remove packages exceeding max-age."""
-    repository = Path('repository')
+    repository = Path('pacman-repository')
     logger.info('Removing old packages ...')
 
     for package in Package.objects.filter(age__gt=config['publisher']['max-age']):
@@ -55,8 +55,24 @@ def clean_old():
 
 def clean_unmaintained():
     """Remove packages with no version updates and missing from repository."""
+    # Step 1: Clean up database records - combines detector's two cleanup cases
     repository = Path('repository')
-    logger.info('Removing dropped packages ...')
+    logger.info('Cleaning database records for dropped packages')
+
+    for record in Version.objects.filter(newver__exact=F('oldver')):
+        key = record.key[:record.key.find(':')]
+        if not (repository / key).exists():
+            try:
+                status = Status.objects.get(key=key)
+                status.delete()
+            except Status.DoesNotExist:
+                pass
+            record.delete()
+            logger.warning('Removed %s', key)
+
+    # Step 2: Remove unmaintained packages using 'pacman-repository' path
+    repository = Path('pacman-repository')
+    logger.info('Removing package files for dropped packages ...')
 
     status = Status.objects.all()
     for package in Package.objects.exclude(key__in=status):
@@ -71,6 +87,7 @@ def clean_unmaintained():
         run(['sh', '-c', f'rsync -avP repository/* repository:{config["publisher"]["path"]}'])
         package.delete()
         logger.info('Removed %s', package.key)
+
 
 if __name__ == '__main__':
     # Determine which phase to run based on first argument
