@@ -43,6 +43,8 @@ jobs:
           patch /usr/bin/repo-add < cactus/publisher/repo-add.patch
           echo "$(realpath cactus/publisher/bin)" >> $GITHUB_PATH
 
+      - uses: arch4edu/cactus/actions/checkout-repository@main
+
       - name: Remove unmaintained packages
         run: python -m cactus.publisher.clean unmaintained
 
