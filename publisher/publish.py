@@ -52,7 +52,7 @@ if __name__ == '__main__':
             with open(repository / 'lastupdate', 'w') as f:
                 f.write(str(int(time.time())))
 
-            run(['sh', '-c', f'rsync -avP repository/* repository:{config["publisher"]["path"]}'])
+            run(['sh', '-c', f'rsync -avP f{repository}/* repository:{config["publisher"]["path"]}'])
 
             connection.connect()
             package_record = Package(key=record.key, package=package.name)
