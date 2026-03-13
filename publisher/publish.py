@@ -13,7 +13,7 @@ if __name__ == '__main__':
     from django.db import connection
     from ..models import Status, Version, Package
 
-    repository = Path('repository')
+    repository = Path('pacman-repository')
 
     for record in Status.objects.filter(status='BUILT'):
         if not repository.exists():
