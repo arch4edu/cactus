@@ -22,7 +22,13 @@ if __name__ == '__main__':
         workflow = record.workflow
         pkgbase = record.key.split('/')[-1]
 
-        download_artifact_package(workflow, pkgbase)
+        try:
+            download_artifact_package(workflow, pkgbase)
+        except Exception as e:
+            logger.error(f'Failed to download artifact for {pkgbase} (workflow {workflow}): {e}')
+            record.detail = 'Download artifact failed'
+            record.save()
+            continue
 
         connection.connect()
         for package_record in Package.objects.filter(key=record.key):
