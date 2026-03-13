@@ -51,7 +51,7 @@ def clean_old():
         with open(repository / 'lastupdate', 'w') as f:
             f.write(str(int(time.time())))
 
-        run(['sh', '-c', f'rsync -avP repository/* repository:{config["publisher"]["path"]}'])
+        run(['sh', '-c', f'rsync -avP {repository}/* repository:{config["publisher"]["path"]}'])
 
 def clean_unmaintained():
     """Remove packages with no version updates and missing from repository."""
@@ -84,7 +84,7 @@ def clean_unmaintained():
         with open(repository / 'lastupdate', 'w') as f:
             f.write(str(int(time.time())))
 
-        run(['sh', '-c', f'rsync -avP repository/* repository:{config["publisher"]["path"]}'])
+        run(['sh', '-c', f'rsync -avP {repository}/* repository:{config["publisher"]["path"]}'])
         package.delete()
         logger.info('Removed %s', package.key)
 
