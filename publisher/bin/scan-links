@@ -1,13 +1,9 @@
 #!/usr/bin/python
-import contextlib
-import io
 import tarfile
-import tempfile
 
 from elftools.elf.elffile import ELFFile
 from elftools.elf.dynamic import DynamicSection
 from Namcap.util import is_elf
-from pyzstd import decompress_stream
 
 def scanlibs(fileobj):
     if not is_elf(fileobj):
@@ -27,27 +23,18 @@ def scanlibs(fileobj):
     return sharedlibs
 
 
-@contextlib.contextmanager
-def ZstdTarReader(name, *, zstd_dict=None, option=None, **kwargs):
-    with io.open(name, "rb") as ifh:
-        with tempfile.TemporaryFile() as tmp_file:
-            decompress_stream(ifh, tmp_file, zstd_dict=zstd_dict, option=option)
-            tmp_file.seek(0)
-            with tarfile.TarFile(fileobj=tmp_file, **kwargs) as tar:
-                yield tar
-
-
 def get_sodepends(package):
     sodepends = set()
 
-    with ZstdTarReader(package) as tar:
+    # Python 3.14+ native zstd support using 'r:zst' mode (not streaming, supports seek)
+    with tarfile.open(package, mode='r:zst') as tar:
         pkg_so_files = [i.split("/")[-1] for i in tar.getnames() if ".so" in i]
 
         files = [i for i in tar.getmembers() if i.isfile()]
         for file in files:
             file = tar.extractfile(file)
             sodepends.update(scanlibs(file))
-        sodepends = sorted([i for i in sodepends if not i in pkg_so_files])
+        sodepends = sorted([i for i in sodepends if i not in pkg_so_files])
     return sodepends
 
 
