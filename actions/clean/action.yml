@@ -9,7 +9,7 @@ runs:
         echo
         echo 'Cleaning ...'
         # Remove any partial/incomplete pacman download files (download + 6 alphanumeric chars)
-        find /var/cache/pacman/pkg -maxdepth 1 -type f -regex '.*/download-[0-9a-zA-Z][0-9a-zA-Z][0-9a-zA-Z][0-9a-zA-Z][0-9a-zA-Z][0-9a-zA-Z]' -delete 2>/dev/null || true
+        find /var/cache/pacman/pkg -maxdepth 1 -type f -regex '.*/download-[0-9a-zA-Z][0-9a-zA-Z][0-9a-zA-Z][0-9a-zA-Z][0-9a-zA-Z][0-9a-zA-Z]' -delete || true
         # Now clean pacman cache
         pacman -Sc --noconfirm
         cd repository
