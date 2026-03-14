@@ -17,13 +17,13 @@ runs:
       run: |
         timestamp=$(date +%F-%T)
         echo "time=$timestamp" >> $GITHUB_OUTPUT
-        echo "time_10min=${timestamp:0:15}0" >> $GITHUB_OUTPUT
+        echo "time_60min=${timestamp:0:14}00" >> $GITHUB_OUTPUT
 
     - name: Set up pacman package cache
       uses: actions/cache@master
       with:
         path: /var/cache/pacman/pkg
-        key: pacman-package-${{ inputs.arch }}-${{ steps.time.outputs.time_10min }}
+        key: pacman-package-${{ inputs.arch }}-${{ steps.time.outputs.time_60min }}
         restore-keys: pacman-package-${{ inputs.arch }}-
 
     - name: Generate default secret key
