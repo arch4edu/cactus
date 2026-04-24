@@ -85,7 +85,7 @@ jobs:
         run: echo "$(realpath cactus/builder/bin)" >> $GITHUB_PATH
 
       - name: Collect Telemetry
-        uses: petronny/workflow-telemetry-action@quickchart
+        uses: arch4edu/workflow-telemetry-action@quickchart
 
       - name: Build ${{ github.event.inputs.pkgbase }}
         uses: arch4edu/cactus/actions/build-package@main
