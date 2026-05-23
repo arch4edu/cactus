@@ -28,9 +28,6 @@ jobs:
           status: building
           workflow: ${{ github.run_id }}
 
-      - name: Collect telemetry
-        uses: arch4edu/workflow-telemetry-action@master
-
       - uses: arch4edu/cactus/actions/upgrade-archlinux@main
 
       - name: Install runtime dependencies
@@ -67,6 +64,9 @@ jobs:
 
       - name: Add path
         run: echo "$(realpath cactus/builder/bin)" >> $GITHUB_PATH
+
+      - name: Collect telemetry
+        uses: arch4edu/workflow-telemetry-action@master
 
       - name: Build ${{ github.event.inputs.pkgbase }}
         uses: arch4edu/cactus/actions/build-package@main
