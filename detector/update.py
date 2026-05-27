@@ -5,6 +5,7 @@ if __name__ == '__main__':
     import json
     from datetime import datetime, timedelta
     from django.db.models import F
+    from django.db.models.functions import Now
     from pathlib import Path
     from .. import logger
     from ..models import Status, Version
@@ -81,7 +82,16 @@ if __name__ == '__main__':
             status.status = 'STALE'
             status.save()
             logger.debug(f'{key}: {record.oldver} -> {record.newver}')
-        elif status.status == 'FAILED' and datetime.now() - status.timestamp.replace(tzinfo=None) > timedelta(days=1):
-            status.status = 'STALE'
-            status.save()
-            logger.debug(f'{key}: try to rebuild {record.newver}')
+
+    logger.info('Retrying failed packages')
+    retryable = Status.objects.filter(
+        status='FAILED',
+        timestamp__lt=Now() - timedelta(days=1)
+    )
+    for status in retryable:
+        if not (repository / status.key).exists():
+            continue
+        status.status = 'STALE'
+        status.detail = 'Retry'
+        status.save()
+        logger.debug(f'{status.key}: try to rebuild')
