@@ -65,7 +65,7 @@ if __name__ == '__main__':
         except:
             raise Exception(f'Cannot find {pkgbase} in the database.')
 
-        if datetime.now() - status.timestamp.replace(tzinfo=None) > timedelta(days=1):
+        if datetime.now() - status.timestamp.replace(tzinfo=None) > timedelta(days=2):
             pacman_packages.append(f'{config["pacman"]["repository"]}/{pkgname}')
         else:
             _pkgbase = status.key.split('/')[-1]
