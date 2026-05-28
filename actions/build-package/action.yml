@@ -23,7 +23,11 @@ runs:
         # Download dependencies (no logging)
         if ! python -m cactus.builder.download-depends repository ${{ inputs.pkgbase }}; then
           echo "result=failed" >> $GITHUB_OUTPUT
-          echo "detail=Failed to download dependencies" >> $GITHUB_OUTPUT
+          if [ -f detail.txt ]; then
+            echo "detail=$(cat detail.txt)" >> $GITHUB_OUTPUT
+          else
+            echo "detail=Failed to download dependencies" >> $GITHUB_OUTPUT
+          fi
           exit 0
         fi
         chown -R makepkg:root repository

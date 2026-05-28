@@ -19,7 +19,7 @@ def extract_detail() -> str:
         except:
             content = log_file.read_bytes().decode('utf-8', errors='replace')
         
-        # Match "error: target not found: <pkg>"
+        # Match "error: target not found: <pkg>" (may have multiple)
         missing = re.findall(r"error: target not found:\s*(\S+)", content)
         if missing:
             pkgs = sorted(set(missing))

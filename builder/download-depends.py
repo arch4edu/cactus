@@ -29,6 +29,8 @@ def resolve_depends(repository, pkgbase, result, key='depends', pkgname=None):
     return result
 
 if __name__ == '__main__':
+    import re
+    import subprocess
     import sys
     import json
     from datetime import datetime, timedelta
@@ -71,7 +73,18 @@ if __name__ == '__main__':
 
     if len(pacman_packages) > 0:
         logger.info(f'Downloading {pacman_packages} with pacman ...')
-        run(['pacman', '--cachedir', depends, '--noconfirm', '-Swdd'] + pacman_packages)
+        try:
+            run(['pacman', '--cachedir', depends, '--noconfirm', '-Swdd'] + pacman_packages)
+        except subprocess.CalledProcessError as e:
+            missing = re.findall(r"error: target not found:\s*(\S+)", e.stderr or '')
+            if missing:
+                pkgs = sorted(set(missing))
+                detail = f'Failed to download dependencies: {", ".join(pkgs)}'
+            else:
+                detail = 'Failed to download dependencies'
+            Path('detail.txt').write_text(detail)
+            logger.error(detail)
+            sys.exit(1)
 
     for workflow, pkgbase, pkgname in artifact_packages:
         download_artifact_package(workflow, pkgbase, pkgname)
