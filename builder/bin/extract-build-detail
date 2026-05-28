@@ -30,6 +30,10 @@ def extract_detail() -> str:
         if stage_match:
             stage = stage_match.group(1)
             return f"Failed in {stage}()"
+
+        # Match download failures: "==> ERROR: Failure while downloading ..."
+        if re.search(r"==>\s*ERROR:\s*Failure while downloading", content):
+            return "Failed in sources()"
         
     except Exception:
         pass
