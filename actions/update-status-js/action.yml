@@ -4,7 +4,7 @@ author: "arch4edu"
 
 inputs:
   pkgbase:
-    description: 'Package base path (e.g., aarch64/libsearpc)'
+    description: 'Package base path (space-separated for multiple, e.g., x86_64/pkg1 x86_64/pkg2)'
     required: true
   status:
     description: 'Build status (built, building, failed, stale)'

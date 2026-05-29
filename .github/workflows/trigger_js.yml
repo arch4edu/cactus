@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       pkgbase:
-        description: 'Path to pkgbase'
+        description: 'Path to pkgbase (space-separated for multiple, e.g., x86_64/pkg1 x86_64/pkg2)'
         required: true
 
 jobs:
