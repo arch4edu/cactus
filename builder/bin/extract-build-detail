@@ -42,6 +42,10 @@ def extract_detail() -> str:
         # Match version comparison failures: "is not greater than the old version"
         if re.search(r"is not greater than the old version", content):
             return "Failed in vercmp()"
+
+        # Match PGP signature verification failures: "could not be verified"
+        if re.search(r"could not be verified", content):
+            return "Failed in gpg()"
         
     except Exception:
         pass
