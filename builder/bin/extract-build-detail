@@ -38,6 +38,10 @@ def extract_detail() -> str:
         # Match checksum validation failures: "did not pass the validity check!"
         if re.search(r"did not pass the validity check", content):
             return "Failed in checksum()"
+
+        # Match version comparison failures: "is not greater than the old version"
+        if re.search(r"is not greater than the old version", content):
+            return "Failed in vercmp()"
         
     except Exception:
         pass
