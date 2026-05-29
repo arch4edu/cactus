@@ -72,11 +72,15 @@ async function main() {
     for (const pkgbase of pkgbases) {
       try {
         const [r1] = await connection.execute(
-          `INSERT INTO cactus_status (\`key\`, status, detail, workflow, timestamp)
-           VALUES (?, ?, ?, ?, NOW())
-           ON DUPLICATE KEY UPDATE status = VALUES(status), detail = VALUES(detail), workflow = VALUES(workflow), timestamp = NOW()`,
-          [pkgbase, dbStatus, detailValue, workflow]
+          `UPDATE cactus_status SET status = ?, detail = ?, workflow = ?, timestamp = NOW()
+           WHERE \`key\` = ?`,
+          [dbStatus, detailValue, workflow, pkgbase]
         );
+        if (r1.affectedRows === 0) {
+          console.error(`❌ ${pkgbase}: not found in database`);
+          failed.push(pkgbase);
+          continue;
+        }
         console.log(`✅ ${pkgbase} → ${dbStatus}`);
         success.push(pkgbase);
       } catch (err) {
