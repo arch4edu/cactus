@@ -18,7 +18,9 @@ pre_build(){
 	# Recieve GPG keys
 	recv-gpg-keys || :
 
-	makepkg -A -od --noprepare
+	makepkg_args=$(yq -r '.makepkg_args' cactus.yaml)
+	[ "$makepkg_args" = "null" ] && unset makepkg_args
+	_eval makepkg -A -od --noprepare $makepkg_args
 	newver=$(read-version)
 	auto-bump-pkgrel "$oldver" "$newver"
 }
