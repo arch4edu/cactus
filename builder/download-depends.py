@@ -4,6 +4,8 @@ import yaml
 def load_depends(repository, pkgbase, key='depends', pkgname=None):
     with open(repository / pkgbase / 'cactus.yaml') as f:
         cactus = yaml.safe_load(f) or {}
+    if key == 'checkdepends' and '--nocheck' in (cactus.get('makepkg_args') or '').split():
+        return []
     if pkgname is not None:
         depends = cactus.get(f'{key}_{pkgname}')
         if depends is not None:
