@@ -46,6 +46,7 @@ if __name__ == '__main__':
     all_depends = []
     all_depends = resolve_depends(repository, pkgbase, all_depends)
     all_depends = resolve_depends(repository, pkgbase, all_depends, 'makedepends')
+    all_depends = resolve_depends(repository, pkgbase, all_depends, 'checkdepends')
 
     depends = repository / pkgbase / 'depends'
     if depends.exists():
