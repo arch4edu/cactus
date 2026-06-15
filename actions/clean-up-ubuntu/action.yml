@@ -7,7 +7,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: webiny/action-post-run@3.1.0
+    - uses: arch4edu/action-post-run@3.1.0
       with:
         run: sh -c "arch-chroot ${{ inputs.root }} dpkg-query -Wf '${Installed-Size}\t${Package}\t${Status}\n' | grep installed | sort -n"
 
