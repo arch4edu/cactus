@@ -65,7 +65,8 @@ async function main() {
   try {
     await connection.beginTransaction();
 
-    const detailValue = detail === null ? null : String(detail || '');
+    const detailStr = detail === null ? null : String(detail || '');
+    const detailValue = detailStr !== null && detailStr.length > 200 ? detailStr.slice(0, 197) + '...' : detailStr;
     const success = [];
     const failed = [];
 
