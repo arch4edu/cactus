@@ -1,0 +1,47 @@
+#!/bin/sh
+# Download source files from arch4edu/storage GitHub Releases.
+# Parses source URLs from .SRCINFO or PKGBUILD, downloads matching assets.
+# Usage: arch4edu-storage <pkgname> [index]
+#   index: 1-based source number to download (default: 1)
+
+pkgname=$1
+index=${2:-1}
+
+if [ -z "$pkgname" ]; then
+	echo "Usage: arch4edu-storage <pkgname> [index]" >&2
+	exit 1
+fi
+
+# Resolve variables from .SRCINFO or PKGBUILD
+source_entry=""
+if [ -f .SRCINFO ]; then
+	pkgver=$(grep '^\s*pkgver = ' .SRCINFO | head -1 | sed 's/.*pkgver = //')
+	source_entry=$(grep '^\s*source = ' .SRCINFO | sed -n "${index}p" | sed 's/.*source = //')
+elif [ -f PKGBUILD ]; then
+	pkgver=$(grep -m1 '^pkgver=' PKGBUILD | cut -d= -f2-)
+	source_entry=$(grep -oP '(?<=source=\()[^\)]+' PKGBUILD | tr ' ' '\n' | sed "s/[\"']//g" | grep -v '^$' | sed -n "${index}p")
+fi
+
+[ -z "$source_entry" ] && exit 0
+
+# Expand $pkgver and $pkgname in source entry
+source_entry=$(echo "$source_entry" | sed "s/\$pkgver/$pkgver/g; s/\${pkgver}/$pkgver/g; s/\$pkgname/$pkgname/g; s/\${pkgname}/$pkgname/g")
+
+# Handle "filename::url" syntax vs plain url
+case "$source_entry" in
+	*::*)
+		filename="${source_entry%%::*}"
+		;;
+	*)
+		filename=$(basename "$source_entry")
+		;;
+esac
+
+# Query release assets
+json=$(wget -q -O - "https://api.github.com/repos/arch4edu/storage/releases/tags/$pkgname" 2>/dev/null) || exit 0
+asset_url=$(echo "$json" | jq -r --arg f "$filename" '.assets[] | select(.name == $f) | .url')
+
+[ -z "$asset_url" ] || [ "$asset_url" = "null" ] && exit 0
+
+echo "Downloading from arch4edu/storage: $filename"
+curl -sOJL -H "Accept: application/octet-stream" "$asset_url"
