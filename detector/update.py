@@ -51,19 +51,13 @@ if __name__ == '__main__':
     for status in Status.objects.filter(detail__startswith='nvchecker failed'):
         if status.key in nvchecker_failed:
             continue
-        up_to_date = True
-        for version in Version.objects.filter(key__startswith=f'{status.key}:'):
-            if version.oldver != version.newver:
-                up_to_date = False
-                break
-        if up_to_date:
-            if ',' in status.detail:
-                status.status = status.detail.split('previously ', 1)[1]
-            else:
-                status.status = 'STALE'
-            logger.debug(f'{status.key}: recover from nvchecker failed to {status.status}')
-            status.detail = ''
-            status.save()
+        if ',' in status.detail:
+            status.status = status.detail.split('previously ', 1)[1]
+        else:
+            status.status = 'STALE'
+        logger.debug(f'{status.key}: recover from nvchecker failed to {status.status}')
+        status.detail = ''
+        status.save()
 
     logger.info('Marking stale')
 
