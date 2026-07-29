@@ -44,7 +44,7 @@ jobs:
           mkdir -p nvchecker
           [ -f nvchecker/newver.json ] && mv nvchecker/newver.json nvchecker/oldver.json
           sed "s/GITHUB_TOKEN/${{ steps.config.outputs.github_token }}/" cactus/detector/keyfile.toml > keyfile.toml
-          nvchecker --logger both -c nvchecker.toml | tee nvchecker.log
+          nvchecker --logger both -c nvchecker.toml --keyfile keyfile.toml | tee nvchecker.log
 
       - name: Update database
         run: python -m cactus.detector.update repository
