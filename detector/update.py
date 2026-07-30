@@ -38,26 +38,25 @@ if __name__ == '__main__':
         try:
             status = Status.objects.get(key=key)
         except Status.DoesNotExist:
-            status = Status(key=key)
+            Status.objects.create(key=key, status='FAILED', detail='nvchecker failed')
+            continue
         if not status.detail.startswith('nvchecker failed'):
             if status.status == '':
-                status.detail = 'nvchecker failed'
+                detail = 'nvchecker failed'
             else:
-                status.detail = f'nvchecker failed, previously {status.status}'
-            status.status = 'FAILED'
-            status.save()
+                detail = f'nvchecker failed, previously {status.status}'
+            Status.objects.filter(key=key).update(status='FAILED', detail=detail)
 
     logger.info('Checking previous failed')
     for status in Status.objects.filter(detail__startswith='nvchecker failed'):
         if status.key in nvchecker_failed:
             continue
         if ',' in status.detail:
-            status.status = status.detail.split('previously ', 1)[1]
+            new_status = status.detail.split('previously ', 1)[1]
         else:
-            status.status = 'STALE'
-        logger.debug(f'{status.key}: recover from nvchecker failed to {status.status}')
-        status.detail = ''
-        status.save()
+            new_status = 'STALE'
+        logger.debug(f'{status.key}: recover from nvchecker failed to {new_status}')
+        Status.objects.filter(key=status.key).update(status=new_status, detail='')
 
     logger.info('Marking stale')
 
@@ -81,7 +80,7 @@ if __name__ == '__main__':
     retryable = Status.objects.filter(
         status='FAILED',
         timestamp__lt=Now() - timedelta(days=1)
-    )
+    ).exclude(detail__startswith='nvchecker failed')
     for status in retryable:
         if not (repository / status.key).exists():
             continue
