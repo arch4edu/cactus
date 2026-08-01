@@ -65,8 +65,10 @@ if __name__ == '__main__':
     repository = Path(sys.argv[1])
     dependency_graph = {}
     reversed_dependency_graph = {}
+    resources = config['scheduler']
 
     logger.info('Loading cactus.yaml')
+    groups = {}
     for i in repository.rglob('cactus.yaml'):
         try:
             pkgbase = str(i.parent)[len(str(repository))+1:]
@@ -81,25 +83,29 @@ if __name__ == '__main__':
                 for j in depends:
                     add_edge(dependency_graph, pkgbase, j)
                     add_edge(reversed_dependency_graph, j, pkgbase)
+            if 'group' in cactus:
+                groups[pkgbase] = cactus['group']
+            elif 'aarch64' in pkgbase:
+                groups[pkgbase] = 'aarch64'
+            else:
+                groups[pkgbase] = resources['default']
             logger.debug(f'Loaded %s', pkgbase)
         except:
             logger.error(f'Failed to load %s', pkgbase)
             traceback.print_exc()
 
     logger.info('Recursively skip packages')
-    failed = [i.key for i in Status.objects.filter(status='FAILED')]
-    staled = [i.key for i in Status.objects.filter(status='STALE')]
-    scheduled = [i.key for i in Status.objects.filter(status='SCHEDULED')]
-    building = [i.key for i in Status.objects.filter(status='BUILDING')]
-    for i in failed + staled + scheduled + building:
+    buckets = {'FAILED': [], 'STALE': [], 'SCHEDULED': [], 'BUILDING': []}
+    for i in Status.objects.filter(status__in=list(buckets)):
+        buckets[i.status].append(i.key)
+    staled = buckets['STALE']
+    for i in buckets['FAILED'] + staled + buckets['SCHEDULED'] + buckets['BUILDING']:
         recursively_skip(dependency_graph, reversed_dependency_graph, i)
 
     logger.info('Start scheduling')
     sorter = TopologicalSorter(dependency_graph)
     order = list(sorter.static_order())
     order = [i for i in order if i in staled]
-
-    resources = config['scheduler']
 
     for group in resources.keys():
         if group == 'default':
@@ -110,22 +116,20 @@ if __name__ == '__main__':
     for i in order:
         if i == 'dummy':
             continue
-        with open(repository / i / 'cactus.yaml') as f:
-            cactus = yaml.safe_load(f)
-        if not 'group' in cactus:
-            if 'aarch64' in i:
-                cactus['group'] = 'aarch64'
-            else:
-                cactus['group'] = resources['default']
-        if resources[cactus['group']]['used'] < resources[cactus['group']]['total']:
+        group = groups.get(i)
+        if group is None:
+            logger.warn('No group for %s. Skipping', i)
+            continue
+        if resources[group]['used'] < resources[group]['total']:
             try:
                 status = Status.objects.get(key=i)
             except:
                 logger.warn('Cannot find %s in database. Skipping', i)
+                continue
             logger.info('Schedule to build %s', i)
-            github_actions.build(i, cactus['group'])
+            github_actions.build(i, group)
             status.status = 'SCHEDULED'
-            status.detail = cactus['group']
+            status.detail = group
             status.save()
-            resources[cactus['group']]['used'] += 1
-            logger.info('%s: %d / %d', cactus['group'], resources[cactus['group']]['used'], resources[cactus['group']]['total'])
+            resources[group]['used'] += 1
+            logger.info('%s: %d / %d', group, resources[group]['used'], resources[group]['total'])
