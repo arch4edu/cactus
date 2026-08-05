@@ -6,6 +6,8 @@ github:
   token: github_token
 pacman:
   repository: repository
+  keyring_repository: username/keyring
+  mirrorlist_repository: username/mirrorlist
   archs: x86_64 aarch64
 database:
   ENGINE: django.db.backends.mysql
@@ -27,3 +29,4 @@ publisher:
   port: port
   user: username
   path: /path/to/repository
+  max-age: 2
