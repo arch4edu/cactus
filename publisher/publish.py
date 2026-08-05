@@ -11,6 +11,7 @@ def repo_add(repository, arch, package):
 if __name__ == '__main__':
     from pathlib import Path
     from django.db import connection
+    from django.db.models import F
     from ..models import Status, Version, Package
 
     repository = Path('pacman-repository')
@@ -31,9 +32,7 @@ if __name__ == '__main__':
             continue
 
         connection.connect()
-        for package_record in Package.objects.filter(key=record.key):
-            package_record.age += 1
-            package_record.save()
+        Package.objects.filter(key=record.key).update(age=F('age') + 1)
 
         for package in Path('.').glob('*.pkg.tar.zst'):
             run(['gpg', '--pinentry-mode', 'loopback', '--passphrase', '', '--detach-sign', '--', package])
@@ -58,7 +57,7 @@ if __name__ == '__main__':
             with open(repository / 'lastupdate', 'w') as f:
                 f.write(str(int(time.time())))
 
-            run(['sh', '-c', f'rsync -avP {repository}/* repository:{config["publisher"]["path"]}'])
+            run(['rsync', '-avP', f'{repository}/', f'repository:{config["publisher"]["path"]}'])
 
             connection.connect()
             package_record = Package(key=record.key, package=package.name)
