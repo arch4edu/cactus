@@ -45,7 +45,7 @@ if __name__ == '__main__':
             try:
                 status = Status.objects.get(key=pkgbase)
             except:
-                status = Status(key=key)
+                status = Status(key=pkgbase)
             status.status = 'FAILED'
             status.detail = 'Failed to load cactus.yaml.'
             traceback.print_exc()
