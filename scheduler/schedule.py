@@ -110,7 +110,7 @@ if __name__ == '__main__':
     for group in resources.keys():
         if group == 'default':
             continue
-        resources[group]['used'] = Status.objects.filter(detail=group).count()
+        resources[group]['used'] = Status.objects.filter(status__in=['SCHEDULED', 'BUILDING'], detail=group).count()
         logger.info('%s: %d / %d', group, resources[group]['used'], resources[group]['total'])
 
     for i in order:
