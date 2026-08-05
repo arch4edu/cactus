@@ -7,9 +7,9 @@ if __name__ == '__main__':
 
     for pkgbase in sys.argv[1:]:
         status = Status.objects.get(key=pkgbase)
-        if status.status != 'STALE':
-            status.status = 'STALE'
-            status.save()
+        status.status = 'STALE'
+        status.detail = ''
+        status.save()
         logger.info(f'Marked {pkgbase} as staled.')
 
         for record in Version.objects.filter(key__startswith=pkgbase):
