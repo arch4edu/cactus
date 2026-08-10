@@ -11,6 +11,7 @@ def run(command, **kwargs):
     return subprocess.run(command, **kwargs)
 
 remove = os.remove
+copy = shutil.copy2
 move = shutil.move
 rmtree = shutil.rmtree
 
@@ -33,6 +34,42 @@ def parse_package(package):
         epoch, pkgver = pkgver.split(':')
     pkgname = '-'.join(package[:-3])
     return pkgname, epoch, pkgver, pkgrel, arch, pkgext
+
+def readable(archive):
+    for command in (['gzip', '-t', archive], ['bsdtar', '-tf', archive]):
+        output = run(command, check=False, capture_output=True)
+        if output.returncode != 0:
+            logger.warning('%s failed on %s: %s', command[0], archive, output.stderr.decode().strip())
+            return False
+    return True
+
+def repair_databases(repository):
+    pattern = f'{config["pacman"]["repository"]}.*.tar.gz'
+    databases = set(repository.glob(f'*/{pattern}'))
+    for backup in repository.glob(f'*/{pattern}.old'):
+        databases.add(backup.with_name(backup.name.removesuffix('.old')))
+    for database in sorted(databases):
+        if database.exists() and readable(database):
+            continue
+        backup = database.with_name(f'{database.name}.old')
+        if not backup.exists() or not readable(backup):
+            raise Exception(f'{database} is unusable and {backup} cannot restore it.')
+        logger.warning('%s is unusable. Restoring it from %s', database, backup)
+        copy(backup, database)
+
+def sync_repository(repository):
+    if repository.exists():
+        return
+    run(['rsync', '-av', '--progress', '--exclude', '*.pkg*', '--exclude', '*.lck', f'repository:{config["publisher"]["path"]}/*', repository])
+    repair_databases(repository)
+
+def upload_repository(repository):
+    destination = f'repository:{config["publisher"]["path"]}'
+    pattern = f'{config["pacman"]["repository"]}.*'
+    run(['rsync', '-av', '--progress', '--exclude', pattern, '--exclude', '.tmp.*', f'{repository}/', destination])
+    databases = sorted(repository.glob(pattern)) + sorted(repository.glob(f'*/{pattern}'))
+    paths = [str(database.relative_to(repository)) for database in databases if database.suffix != '.lck']
+    run(['rsync', '-av', '--progress', '--relative'] + paths + [destination], cwd=repository)
 
 def download_artifact_package(workflow, pkgbase, pkgname=None):
     if pkgname:

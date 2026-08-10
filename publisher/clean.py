@@ -5,7 +5,7 @@ from pathlib import Path
 
 from django.db.models import F
 from .. import config, logger
-from ..common.util import run, parse_package
+from ..common.util import run, parse_package, sync_repository, upload_repository
 from ..models import Status, Version, Package
 
 def repo_remove(db, pkgname):
@@ -45,13 +45,12 @@ def clean_old():
         remove_package(package.package)
         package.delete()
 
-        if not repository.exists():
-            run(['rsync', '-avP', '--exclude', '*.pkg*', f'repository:{config["publisher"]["path"]}/*', repository])
+        sync_repository(repository)
 
         with open(repository / 'lastupdate', 'w') as f:
             f.write(str(int(time.time())))
 
-        run(['rsync', '-avP', f'{repository}/', f'repository:{config["publisher"]["path"]}'])
+        upload_repository(repository)
 
 def clean_unmaintained():
     """Remove packages with no version updates and missing from repository."""
@@ -76,15 +75,14 @@ def clean_unmaintained():
 
     status = Status.objects.all()
     for package in Package.objects.exclude(key__in=status):
-        if not repository.exists():
-            run(['rsync', '-avP', '--exclude', '*.pkg*', f'repository:{config["publisher"]["path"]}/*', repository])
+        sync_repository(repository)
 
         remove_package(package.package, repository)
 
         with open(repository / 'lastupdate', 'w') as f:
             f.write(str(int(time.time())))
 
-        run(['rsync', '-avP', f'{repository}/', f'repository:{config["publisher"]["path"]}'])
+        upload_repository(repository)
         package.delete()
         logger.info('Removed %s', package.key)
 

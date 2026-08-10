@@ -1,7 +1,7 @@
 #!/bin/python
 import time
 from .. import config, logger
-from ..common.util import run, move, symlink, parse_package, download_artifact_package
+from ..common.util import run, move, symlink, parse_package, sync_repository, upload_repository, download_artifact_package
 
 def repo_add(repository, arch, package):
     db = repository / arch / f"{config['pacman']['repository']}.db.tar.gz"
@@ -17,8 +17,7 @@ if __name__ == '__main__':
     repository = Path('pacman-repository')
 
     for record in Status.objects.filter(status='BUILT'):
-        if not repository.exists():
-            run(['rsync', '-avP', '--exclude', '*.pkg*', f'repository:{config["publisher"]["path"]}/*', repository])
+        sync_repository(repository)
 
         workflow = record.workflow
         pkgbase = record.key.split('/')[-1]
@@ -31,8 +30,7 @@ if __name__ == '__main__':
             record.save()
             continue
 
-        connection.connect()
-        Package.objects.filter(key=record.key).update(age=F('age') + 1)
+        published = []
 
         for package in Path('.').glob('*.pkg.tar.zst'):
             run(['gpg', '--pinentry-mode', 'loopback', '--passphrase', '', '--detach-sign', '--', package])
@@ -57,13 +55,17 @@ if __name__ == '__main__':
             with open(repository / 'lastupdate', 'w') as f:
                 f.write(str(int(time.time())))
 
-            run(['rsync', '-avP', f'{repository}/', f'repository:{config["publisher"]["path"]}'])
+            upload_repository(repository)
 
             connection.connect()
             package_record = Package(key=record.key, package=package.name)
             package_record.save()
 
             logger.info('Published %s', package.name)
+            published.append(package.name)
 
+        connection.connect()
+        if published:
+            Package.objects.filter(key=record.key).exclude(package__in=published).update(age=F('age') + 1)
         record.status = 'PUBLISHED'
         record.save()
