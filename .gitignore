@@ -3,3 +3,5 @@ migrations
 *.sw*
 db.sqlite3
 config.local.yaml
+.qoder/
+AGENTS.md
