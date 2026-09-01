@@ -1,18 +1,19 @@
 #!/bin/python
+import os
 import sys
 import time
 from pathlib import Path
 
 from django.db.models import F
 from .. import config, logger
-from ..common.util import run, parse_package, sync_repository, upload_repository
+from ..common.util import run, parse_package, sync_repository, upload_databases
 from ..models import Status, Version, Package
 
 def repo_remove(db, pkgname):
-    output = run(['repo-remove', db, pkgname], capture_output=True, check=False)
+    output = run(['repo-remove', db, pkgname], capture_output=True, check=False, env={**os.environ, 'LC_ALL': 'C'})
     stderr = output.stderr.decode('utf-8')
     if output.returncode != 0 and not f"Package matching '{pkgname}' not found." in stderr:
-        raise Exception(f'Failed to remove {pkgname} from {db}.')
+        raise Exception(f'Failed to remove {pkgname} from {db}: {stderr.strip()}')
     time.sleep(1)
 
 def remove_package(package, repository=None):
@@ -50,7 +51,7 @@ def clean_old():
         with open(repository / 'lastupdate', 'w') as f:
             f.write(str(int(time.time())))
 
-        upload_repository(repository)
+        upload_databases(repository)
 
 def clean_unmaintained():
     """Remove packages with no version updates and missing from repository."""
@@ -82,7 +83,7 @@ def clean_unmaintained():
         with open(repository / 'lastupdate', 'w') as f:
             f.write(str(int(time.time())))
 
-        upload_repository(repository)
+        upload_databases(repository)
         package.delete()
         logger.info('Removed %s', package.key)
 

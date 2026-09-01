@@ -63,13 +63,19 @@ def sync_repository(repository):
     run(['rsync', '-av', '--progress', '--exclude', '*.pkg*', '--exclude', '*.lck', f'repository:{config["publisher"]["path"]}/*', repository])
     repair_databases(repository)
 
-def upload_repository(repository):
-    destination = f'repository:{config["publisher"]["path"]}'
+def upload_packages(repository):
     pattern = f'{config["pacman"]["repository"]}.*'
-    run(['rsync', '-av', '--progress', '--exclude', pattern, '--exclude', '.tmp.*', f'{repository}/', destination])
+    destination = f'repository:{config["publisher"]["path"]}'
+    run(['rsync', '-av', '--progress', '--exclude', pattern, '--exclude', '.tmp.*', '--exclude', 'lastupdate', f'{repository}/', destination])
+
+def upload_databases(repository):
+    pattern = f'{config["pacman"]["repository"]}.*'
+    destination = f'repository:{config["publisher"]["path"]}'
     databases = sorted(repository.glob(pattern)) + sorted(repository.glob(f'*/{pattern}'))
     paths = [str(database.relative_to(repository)) for database in databases if database.suffix != '.lck']
     run(['rsync', '-av', '--progress', '--relative'] + paths + [destination], cwd=repository)
+    # rsync sorts its file list, so lastupdate needs its own transfer to land after the databases.
+    run(['rsync', '-av', '--progress', 'lastupdate', destination], cwd=repository)
 
 def download_artifact_package(workflow, pkgbase, pkgname=None):
     if pkgname:
