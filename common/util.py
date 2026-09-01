@@ -14,7 +14,7 @@ def run(command, **kwargs):
 def rsync(arguments, **kwargs):
     for retry in range(5):
         if retry:
-            time.sleep(retry * 10)
+            time.sleep(retry * 30)
         output = run(['rsync', '-av', '--progress', '--timeout', '600'] + arguments, check=False, **kwargs)
         if output.returncode == 0:
             return
