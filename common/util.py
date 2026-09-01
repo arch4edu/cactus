@@ -2,6 +2,7 @@
 import os
 import shutil
 import subprocess
+import time
 from pathlib import Path
 from .. import config, logger
 
@@ -9,6 +10,16 @@ def run(command, **kwargs):
     if not 'check' in kwargs:
         kwargs['check'] = True
     return subprocess.run(command, **kwargs)
+
+def rsync(arguments, **kwargs):
+    for retry in range(5):
+        if retry:
+            time.sleep(retry * 10)
+        output = run(['rsync', '-av', '--progress', '--timeout', '600'] + arguments, check=False, **kwargs)
+        if output.returncode == 0:
+            return
+        logger.warning('rsync exited with %d', output.returncode)
+    raise Exception(f'rsync failed after 5 attempts: {arguments}')
 
 remove = os.remove
 copy = shutil.copy2
@@ -60,22 +71,22 @@ def repair_databases(repository):
 def sync_repository(repository):
     if repository.exists():
         return
-    run(['rsync', '-av', '--progress', '--exclude', '*.pkg*', '--exclude', '*.lck', f'repository:{config["publisher"]["path"]}/*', repository])
+    rsync(['--exclude', '*.pkg*', '--exclude', '*.lck', f'repository:{config["publisher"]["path"]}/*', repository])
     repair_databases(repository)
 
 def upload_packages(repository):
     pattern = f'{config["pacman"]["repository"]}.*'
     destination = f'repository:{config["publisher"]["path"]}'
-    run(['rsync', '-av', '--progress', '--exclude', pattern, '--exclude', '.tmp.*', '--exclude', 'lastupdate', f'{repository}/', destination])
+    rsync(['--exclude', pattern, '--exclude', '.tmp.*', '--exclude', 'lastupdate', f'{repository}/', destination])
 
 def upload_databases(repository):
     pattern = f'{config["pacman"]["repository"]}.*'
     destination = f'repository:{config["publisher"]["path"]}'
     databases = sorted(repository.glob(pattern)) + sorted(repository.glob(f'*/{pattern}'))
     paths = [str(database.relative_to(repository)) for database in databases if database.suffix != '.lck']
-    run(['rsync', '-av', '--progress', '--relative'] + paths + [destination], cwd=repository)
+    rsync(['--relative'] + paths + [destination], cwd=repository)
     # rsync sorts its file list, so lastupdate needs its own transfer to land after the databases.
-    run(['rsync', '-av', '--progress', 'lastupdate', destination], cwd=repository)
+    rsync(['lastupdate', destination], cwd=repository)
 
 def download_artifact_package(workflow, pkgbase, pkgname=None):
     if pkgname:
