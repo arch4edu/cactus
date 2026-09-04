@@ -5,3 +5,4 @@ db.sqlite3
 config.local.yaml
 .qoder/
 AGENTS.md
+package-lock.json
