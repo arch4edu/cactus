@@ -11,8 +11,8 @@ inputs:
     required: true
     default: 'failed'
   workflow:
-    description: 'Workflow run ID'
-    required: true
+    description: 'Build run ID; omit to keep the recorded one (it must name a build)'
+    required: false
   detail:
     description: 'Optional detail message for failed builds (e.g., missing dependencies)'
     required: false

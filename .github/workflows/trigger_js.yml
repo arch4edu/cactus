@@ -22,4 +22,3 @@ jobs:
         with:
           pkgbase: ${{ github.event.inputs.pkgbase }}
           status: stale
-          workflow: ${{ github.run_id }}

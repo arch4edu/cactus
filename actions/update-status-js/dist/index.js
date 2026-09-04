@@ -27723,7 +27723,7 @@ async function main() {
   const workflow = (process.env.INPUT_WORKFLOW || '').trim();
   const detailInput = process.env.INPUT_DETAIL?.trim();
 
-  if (!pkgbaseInput || !workflow) {
+  if (!pkgbaseInput) {
     console.error('❌ Missing required inputs');
     process.exit(1);
   }
@@ -27775,21 +27775,25 @@ async function main() {
 
     const detailStr = detail === null ? null : String(detail || '');
     const detailValue = detailStr !== null && detailStr.length > 200 ? detailStr.slice(0, 197) + '...' : detailStr;
-    // Omitting the column preserves the current detail; the column is NOT NULL,
-    // so writing null would fail rather than clear it.
-    const setDetail = detailValue !== null;
-    const sql = setDetail
-      ? 'UPDATE cactus_status SET status = ?, detail = ?, workflow = ?, timestamp = NOW() WHERE `key` = ?'
-      : 'UPDATE cactus_status SET status = ?, workflow = ?, timestamp = NOW() WHERE `key` = ?';
+    // Omitted columns keep their current value. workflow must go on naming the
+    // last BUILD run: publisher and download-depends fetch artifacts from it.
+    const columns = ['status = ?'];
+    const values = [dbStatus];
+    if (detailValue !== null) {
+      columns.push('detail = ?');
+      values.push(detailValue);
+    }
+    if (workflow) {
+      columns.push('workflow = ?');
+      values.push(workflow);
+    }
+    const sql = `UPDATE cactus_status SET ${columns.join(', ')}, timestamp = NOW() WHERE \`key\` = ?`;
     const success = [];
     const failed = [];
 
     for (const pkgbase of pkgbases) {
       try {
-        const params = setDetail
-          ? [dbStatus, detailValue, workflow, pkgbase]
-          : [dbStatus, workflow, pkgbase];
-        const [r1] = await connection.execute(sql, params);
+        const [r1] = await connection.execute(sql, [...values, pkgbase]);
         if (r1.affectedRows === 0) {
           console.error(`❌ ${pkgbase}: not found in database`);
           failed.push(pkgbase);
