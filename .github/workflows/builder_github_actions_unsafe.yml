@@ -82,6 +82,7 @@ jobs:
       - name: Build ${{ github.event.inputs.pkgbase }}
         uses: arch4edu/cactus/actions/build-package@main
         id: build
+        continue-on-error: ${{ steps.cache.outputs.enabled == 'true' }}
         timeout-minutes: ${{ steps.cache.outputs.enabled == 'true' && 300 || 360 }}
         with:
           pkgbase: ${{ github.event.inputs.pkgbase }}
