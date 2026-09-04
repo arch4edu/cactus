@@ -27749,7 +27749,9 @@ async function main() {
   }
 
   const { status: dbStatus, detail: defaultDetail } = STATUS_MAP[status] || STATUS_MAP.failed;
-  // Use provided detail if present, otherwise use default from STATUS_MAP
+  // null means "leave the existing detail alone", '' means "clear it". The
+  // scheduler stores the resource group in detail and counts slots with
+  // detail=group, so clearing it on BUILDING would free the slot early.
   const detail = detailInput !== undefined ? detailInput : defaultDetail;
 
   const pkgbases = pkgbaseInput.split(/\s+/);
@@ -27773,16 +27775,21 @@ async function main() {
 
     const detailStr = detail === null ? null : String(detail || '');
     const detailValue = detailStr !== null && detailStr.length > 200 ? detailStr.slice(0, 197) + '...' : detailStr;
+    // Omitting the column preserves the current detail; the column is NOT NULL,
+    // so writing null would fail rather than clear it.
+    const setDetail = detailValue !== null;
+    const sql = setDetail
+      ? 'UPDATE cactus_status SET status = ?, detail = ?, workflow = ?, timestamp = NOW() WHERE `key` = ?'
+      : 'UPDATE cactus_status SET status = ?, workflow = ?, timestamp = NOW() WHERE `key` = ?';
     const success = [];
     const failed = [];
 
     for (const pkgbase of pkgbases) {
       try {
-        const [r1] = await connection.execute(
-          `UPDATE cactus_status SET status = ?, detail = ?, workflow = ?, timestamp = NOW()
-           WHERE \`key\` = ?`,
-          [dbStatus, detailValue, workflow, pkgbase]
-        );
+        const params = setDetail
+          ? [dbStatus, detailValue, workflow, pkgbase]
+          : [dbStatus, workflow, pkgbase];
+        const [r1] = await connection.execute(sql, params);
         if (r1.affectedRows === 0) {
           console.error(`❌ ${pkgbase}: not found in database`);
           failed.push(pkgbase);
