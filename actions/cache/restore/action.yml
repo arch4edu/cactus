@@ -1,0 +1,92 @@
+name: "Restore build cache"
+description: "Restore a resumable build cache and record which run it came from"
+
+inputs:
+  pkgbase:
+    description: 'Path to pkgbase'
+    required: true
+  cache-workflow-id:
+    description: 'Run whose artifacts may hold a build cache to resume from'
+    required: false
+    default: ''
+
+outputs:
+  enabled:
+    description: "Whether this package asked for a build cache"
+    value: ${{ steps.config.outputs.enabled }}
+  name:
+    description: "Artifact name holding the archive or a redirect to it"
+    value: ${{ steps.config.outputs.name }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: config
+      shell: bash -e {0}
+      env:
+        PKGBASE: ${{ inputs.pkgbase }}
+      run: |
+        enabled=$(yq -r '.use_cache' "repository/$PKGBASE/cactus.yaml" 2>/dev/null || echo null)
+        [ "$enabled" = true ] || enabled=false
+        echo "enabled=$enabled" >> $GITHUB_OUTPUT
+        echo "name=$(basename "$PKGBASE").cache" >> $GITHUB_OUTPUT
+        if [ "$enabled" = true ]; then
+          install -d -o makepkg -g wheel /cache
+        fi
+
+    - id: restore
+      if: ${{ steps.config.outputs.enabled == 'true' }}
+      shell: bash -e {0}
+      env:
+        NAME: ${{ steps.config.outputs.name }}
+        REPO: ${{ github.repository }}
+        CACHE_RUN: ${{ inputs.cache-workflow-id }}
+      run: |
+        download() {
+          rm -rf /tmp/cache-artifact
+          for i in 1 2 3; do
+            gh run download "$1" -n "$NAME" -R "$REPO" -D /tmp/cache-artifact && return 0
+            if [ "$i" -lt 3 ]; then
+              sleep $(( i * 5 ))
+            fi
+          done
+          return 1
+        }
+        candidates=''
+        if [ '${{ github.run_attempt }}' -gt 1 ]; then
+          candidates='${{ github.run_id }}'
+        fi
+        candidates="$candidates $CACHE_RUN"
+        for run_id in $candidates; do
+          download "$run_id" || continue
+          hops=0
+          while [ -f /tmp/cache-artifact/redirect ] && [ "$hops" -lt 3 ]; do
+            run_id=$(cat /tmp/cache-artifact/redirect)
+            hops=$(( hops + 1 ))
+            echo "Following the cache redirect to workflow $run_id"
+            download "$run_id" || break
+          done
+          [ -f /tmp/cache-artifact/cache.tar.zst ] || continue
+          if tar -C /cache --zstd -xf /tmp/cache-artifact/cache.tar.zst; then
+            echo "Resumed build cache from workflow $run_id"
+            echo "$run_id" > /tmp/redirect
+            echo "pointer=$run_id" >> $GITHUB_OUTPUT
+            break
+          fi
+          echo "::warning::Cache from workflow $run_id is corrupt; ignoring it"
+          rm -rf /cache
+          mkdir -p /cache
+        done
+        rm -rf /tmp/cache-artifact
+        chown makepkg: /cache
+        touch /tmp/restored
+
+    - id: redirect
+      if: ${{ steps.restore.outputs.pointer != '' && github.run_attempt == '1' }}
+      continue-on-error: true
+      uses: actions/upload-artifact@main
+      with:
+        name: ${{ steps.config.outputs.name }}
+        path: /tmp/redirect
+        overwrite: true
+        retention-days: 7

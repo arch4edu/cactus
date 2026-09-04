@@ -20,6 +20,8 @@ scheduler:
   default: GitHubActions
   GitHubActions:
     total: 15
+  GitHubActionsUnsafe:
+    total: 2
   x86_64:
     total: 1
   aarch64:

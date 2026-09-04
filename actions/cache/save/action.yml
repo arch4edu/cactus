@@ -1,0 +1,54 @@
+name: "Save build cache"
+description: "Archive the build cache and upload it, or leave the recorded redirect standing"
+
+inputs:
+  name:
+    description: 'Artifact name to upload the archive as'
+    required: true
+  result:
+    description: 'Build result: failed, or empty when the build step was killed'
+    required: false
+    default: ''
+
+runs:
+  using: "composite"
+  steps:
+    - id: archive
+      shell: bash -e {0}
+      env:
+        RESULT: ${{ inputs.result }}
+      run: |
+        if [ "$RESULT" = failed ]; then
+          echo "Build failed; leaving the cache where it is"
+          exit 0
+        fi
+        if [ -z "$(ls -A /cache 2>/dev/null)" ]; then
+          echo "Build cache is empty; nothing to upload"
+          exit 0
+        fi
+        if [ -f /tmp/restored ] && [ -z "$(find /cache -type f -newer /tmp/restored -print -quit)" ]; then
+          echo "Build cache is unchanged since the restore; nothing to upload"
+          exit 0
+        fi
+        df -h / | tail -1
+        rm -rf --one-file-system /mnt/*-x86_64 || echo "::warning::could not fully remove the chroot"
+        set +e
+        tar -C /cache -c . | zstd -c -T0 > /tmp/cache.tar.zst
+        tar_status=${PIPESTATUS[0]} zstd_status=${PIPESTATUS[1]}
+        set -e
+        if [ "$tar_status" -ne 0 ] || [ "$zstd_status" -ne 0 ]; then
+          echo "::error::could not archive the build cache (tar $tar_status, zstd $zstd_status)"
+          exit 1
+        fi
+        echo "uploaded=true" >> $GITHUB_OUTPUT
+        ls -lh /tmp/cache.tar.zst
+        df -h / | tail -1
+
+    - if: ${{ steps.archive.outputs.uploaded == 'true' }}
+      uses: actions/upload-artifact@main
+      with:
+        name: ${{ inputs.name }}
+        path: /tmp/cache.tar.zst
+        compression-level: 0
+        overwrite: true
+        retention-days: 7

@@ -69,6 +69,7 @@ if __name__ == '__main__':
 
     logger.info('Loading cactus.yaml')
     groups = {}
+    cached = set()
     for i in repository.rglob('cactus.yaml'):
         try:
             pkgbase = str(i.parent)[len(str(repository))+1:]
@@ -89,6 +90,8 @@ if __name__ == '__main__':
                 groups[pkgbase] = 'aarch64'
             else:
                 groups[pkgbase] = resources['default']
+            if cactus.get('use_cache'):
+                cached.add(pkgbase)
             logger.debug(f'Loaded %s', pkgbase)
         except:
             logger.error(f'Failed to load %s', pkgbase)
@@ -127,7 +130,7 @@ if __name__ == '__main__':
                 logger.warn('Cannot find %s in database. Skipping', i)
                 continue
             logger.info('Schedule to build %s', i)
-            github_actions.build(i, group)
+            github_actions.build(i, group, status.workflow if i in cached else '')
             status.status = 'SCHEDULED'
             status.detail = group
             status.save()

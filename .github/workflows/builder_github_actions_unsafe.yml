@@ -8,6 +8,10 @@ on:
       pkgbase:
         description: 'Path to pkgbase'
         required: true
+      cache_workflow_id:
+        description: 'Run whose artifacts may hold a build cache to resume from'
+        required: false
+        default: ''
 
 jobs:
 
@@ -65,16 +69,32 @@ jobs:
       - name: Add path
         run: echo "$(realpath cactus/builder/bin)" >> $GITHUB_PATH
 
+      - name: Restore build cache
+        id: cache
+        uses: arch4edu/cactus/actions/cache/restore@main
+        with:
+          pkgbase: ${{ github.event.inputs.pkgbase }}
+          cache-workflow-id: ${{ github.event.inputs.cache_workflow_id }}
+
       - name: Collect telemetry
         uses: arch4edu/workflow-telemetry-action@master
 
       - name: Build ${{ github.event.inputs.pkgbase }}
         uses: arch4edu/cactus/actions/build-package@main
         id: build
+        timeout-minutes: ${{ steps.cache.outputs.enabled == 'true' && 270 || 360 }}
         with:
           pkgbase: ${{ github.event.inputs.pkgbase }}
 
+      - name: Save build cache
+        if: ${{ !cancelled() && steps.cache.outputs.enabled == 'true' && steps.build.outputs.result != 'built' && steps.build.conclusion != 'skipped' }}
+        uses: arch4edu/cactus/actions/cache/save@main
+        with:
+          name: ${{ steps.cache.outputs.name }}
+          result: ${{ steps.build.outputs.result }}
+
       - uses: arch4edu/cactus/actions/upload-log@main
+        if: ${{ always() }}
         with:
           pkgbase: ${{ github.event.inputs.pkgbase }}
 
@@ -98,3 +118,4 @@ jobs:
           detail: ${{ steps.build.outputs.detail }}
 
       - uses: arch4edu/cactus/actions/clean@main
+        if: ${{ always() }}
