@@ -5,6 +5,10 @@ inputs:
   pkgbase:
     description: 'Package base path (e.g., x86_64/gtk2)'
     required: true
+  timeout:
+    description: 'Soft build time budget in minutes. When reached the build is stopped and treated as an ordinary (non-fatal) failure so the step still exits 0 and the job stays green, unlike GitHub timeout-minutes which fails the whole job. Empty means no limit.'
+    required: false
+    default: ''
 
 outputs:
   result:
@@ -32,7 +36,22 @@ runs:
         fi
         chown -R makepkg:root repository
         cd repository/${{ inputs.pkgbase }}
-        su makepkg -c cactus-build 2>&1 | tee build.log
+        if [ -n "${{ inputs.timeout }}" ]; then
+          timeout --signal=TERM --kill-after=2m "${{ inputs.timeout }}m" su makepkg -c cactus-build 2>&1 | tee build.log
+          rc=${PIPESTATUS[0]}
+          if [ "$rc" -eq 124 ] || [ "$rc" -ge 128 ]; then
+            # Hit the soft time budget (124) or was signal-killed (>=128): not finished
+            # but progress was made. Emit an EMPTY result so the step exits 0 (job stays
+            # green, no failure email) AND cache/save uploads a fresh archive to resume
+            # from -- result=failed would make it leave the old redirect and discard
+            # this run's progress.
+            echo "result=" >> $GITHUB_OUTPUT
+            echo "detail=" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+        else
+          su makepkg -c cactus-build 2>&1 | tee build.log
+        fi
         if grep -q 'Cactus has successfully built the package.' build.log; then
           echo "result=built" >> $GITHUB_OUTPUT
           echo "detail=" >> $GITHUB_OUTPUT

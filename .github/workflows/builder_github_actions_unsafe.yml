@@ -82,10 +82,9 @@ jobs:
       - name: Build ${{ github.event.inputs.pkgbase }}
         uses: arch4edu/cactus/actions/build-package@main
         id: build
-        continue-on-error: ${{ steps.cache.outputs.enabled == 'true' }}
-        timeout-minutes: ${{ steps.cache.outputs.enabled == 'true' && 300 || 360 }}
         with:
           pkgbase: ${{ github.event.inputs.pkgbase }}
+          timeout: ${{ steps.cache.outputs.enabled == 'true' && 300 || 350 }}
 
       - name: Save build cache
         if: ${{ !cancelled() && steps.cache.outputs.enabled == 'true' && steps.build.outputs.result != 'built' && steps.build.conclusion != 'skipped' }}
