@@ -11,13 +11,16 @@ if __name__ == '__main__':
     from ..models import Status, Version
 
     lines = open('nvchecker.log').readlines()
+    arch = sys.argv[2] if len(sys.argv) > 2 else 'x86_64'
 
     logger.info('Updating newver')
     nvchecker_failed = []
+    checked = set()   # pkgbases this stage actually ran an nvchecker entry for
     for line in lines:
         line = json.loads(line)
         if line['logger_name'] == 'nvchecker.util':
             continue
+        checked.add(line['name'][:line['name'].find(':')])
         if line['event'] == 'up-to-date':
             continue
         try:
@@ -49,6 +52,8 @@ if __name__ == '__main__':
 
     logger.info('Checking previous failed')
     for status in Status.objects.filter(detail__startswith='nvchecker failed'):
+        if status.key not in checked:
+            continue
         if status.key in nvchecker_failed:
             continue
         if ',' in status.detail:
@@ -61,8 +66,16 @@ if __name__ == '__main__':
     logger.info('Marking stale')
 
     repository = Path(sys.argv[1])
+    # Stale is marked by the stage that OWNS the package (its directory arch, mirroring
+    # collect.py's routing: aarch64/ -> aarch64, everything else -> x86_64), not the
+    # stage that checked the version: the aarch64 stage runs after x86_64 and shares the
+    # Version table, so gradle (arch: x86_64, checked in the x86_64 stage) is still
+    # marked stale here, reading the already-updated row.
     for record in Version.objects.exclude(newver__exact=F('oldver')):
         key = record.key[:record.key.find(':')]
+        owner = 'aarch64' if key.split('/', 1)[0] == 'aarch64' else 'x86_64'
+        if owner != arch:
+            continue
         try:
             status = Status.objects.get(key=key)
         except Status.DoesNotExist:

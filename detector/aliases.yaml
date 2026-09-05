@@ -1,65 +1,65 @@
 python:
-  source: archpkg
-  archpkg: python
+  source: alpm
+  alpm: python
   from_pattern: '^(\d+\.\d+)\..*'
   to_pattern: '\1'
 ruby:
-  source: archpkg
-  archpkg: ruby
+  source: alpm
+  alpm: ruby
   from_pattern: ^(\d+\.\d+)\..*
   to_pattern: \1
 perl:
-  source: archpkg
-  archpkg: perl
+  source: alpm
+  alpm: perl
   from_pattern: ^(\d+\.\d+)\..*
   to_pattern: \1
 boost:
-  source: archpkg
-  archpkg: boost-libs
+  source: alpm
+  alpm: boost-libs
   from_pattern: ^(\d+\.\d+)\..*
   to_pattern: \1
 icu:
-  source: archpkg
-  archpkg: icu
+  source: alpm
+  alpm: icu
   from_pattern: ^(\d+)\..*
   to_pattern: \1
 readline:
-  source: archpkg
-  archpkg: readline
+  source: alpm
+  alpm: readline
   from_pattern: ^(\d+)\..*
   to_pattern: \1
 clang:
-  source: archpkg
-  archpkg: clang
+  source: alpm
+  alpm: clang
   from_pattern: ^(\d+)\..*
   to_pattern: \1
 protobuf:
-  source: archpkg
-  archpkg: protobuf
+  source: alpm
+  alpm: protobuf
   provided: libprotobuf.so
   strip_release: true
 jsoncpp:
-  source: archpkg
-  archpkg: jsoncpp
+  source: alpm
+  alpm: jsoncpp
   provided: libjsoncpp.so
   strip_release: true
 mediawiki:
-  source: archpkg
-  archpkg: mediawiki
+  source: alpm
+  alpm: mediawiki
   from_pattern: '^(\d+\.\d+)\..*'
   to_pattern: '\1'
 opencv:
-  source: archpkg
-  archpkg: opencv
+  source: alpm
+  alpm: opencv
   from_pattern: '^(\d+\.\d+)\..*'
   to_pattern: '\1'
 poppler:
-  source: archpkg
-  archpkg: poppler
+  source: alpm
+  alpm: poppler
   provided: libpoppler.so
   strip_release: true
 nlopt:
-  source: archpkg
-  archpkg: nlopt
+  source: alpm
+  alpm: nlopt
   provided: libnlopt.so
   strip_release: true

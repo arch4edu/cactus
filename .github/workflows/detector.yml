@@ -19,7 +19,7 @@ jobs:
         id: init
 
       - name: Install runtime dependencies
-        run: pacman -S --noconfirm --needed nvchecker python-mysqlclient
+        run: pacman -S --noconfirm --needed nvchecker pyalpm python-mysqlclient
 
       - uses: arch4edu/cactus/actions/setup-cactus@main
 
@@ -31,13 +31,13 @@ jobs:
         uses: actions/cache@master
         with:
           path: nvchecker
-          key: nvchecker-${{ steps.init.outputs.time }}
-          restore-keys: nvchecker
+          key: nvchecker-x86_64-${{ steps.init.outputs.time }}
+          restore-keys: nvchecker-x86_64
 
       - uses: arch4edu/cactus/actions/checkout-repository@main
 
       - name: Collecting cactus.yaml
-        run: python -m cactus.detector.collect repository
+        run: python -m cactus.detector.collect repository x86_64
 
       - name: Run nvchecker
         run: |
@@ -47,12 +47,13 @@ jobs:
           nvchecker --logger both -c nvchecker.toml --keyfile keyfile.toml | tee nvchecker.log
 
       - name: Update database
-        run: python -m cactus.detector.update repository
+        run: python -m cactus.detector.update repository x86_64
 
       - name: Check for broken links
-        run: python -m cactus.detector.check_links repository
+        run: python -m cactus.detector.check_links repository x86_64
 
-  check-links-aarch64:
+  detect-aarch64:
+    needs: check
     runs-on: ubuntu-24.04-arm
     container:
       image: arch4edu/archlinuxarm
@@ -66,15 +67,40 @@ jobs:
           pacman-key --populate archlinuxarm
 
       - uses: arch4edu/cactus/actions/upgrade-archlinux@main
+        id: init
         with:
           arch: aarch64
 
       - name: Install runtime dependencies
-        run: pacman -S --noconfirm --needed python-mysqlclient
+        run: pacman -S --noconfirm --needed nvchecker pyalpm python-mysqlclient
 
       - uses: arch4edu/cactus/actions/setup-cactus@main
 
+      - name: Export configurations
+        id: config
+        run: python -m cactus.common.config
+
+      - name: Set up nvchecker cache
+        uses: actions/cache@master
+        with:
+          path: nvchecker
+          key: nvchecker-aarch64-${{ steps.init.outputs.time }}
+          restore-keys: nvchecker-aarch64
+
       - uses: arch4edu/cactus/actions/checkout-repository@main
+
+      - name: Collecting cactus.yaml
+        run: python -m cactus.detector.collect repository aarch64
+
+      - name: Run nvchecker
+        run: |
+          mkdir -p nvchecker
+          [ -f nvchecker/newver.json ] && mv nvchecker/newver.json nvchecker/oldver.json
+          sed "s/GITHUB_TOKEN/${{ steps.config.outputs.github_token }}/" cactus/detector/keyfile.toml > keyfile.toml
+          nvchecker --logger both -c nvchecker.toml --keyfile keyfile.toml | tee nvchecker.log
+
+      - name: Update database
+        run: python -m cactus.detector.update repository aarch64
 
       - name: Check for broken links
         run: python -m cactus.detector.check_links repository aarch64
