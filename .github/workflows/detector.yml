@@ -48,3 +48,6 @@ jobs:
 
       - name: Update database
         run: python -m cactus.detector.update repository
+
+      - name: Check for broken links
+        run: python -m cactus.detector.check_links repository
