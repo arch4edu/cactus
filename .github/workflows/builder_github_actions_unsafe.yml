@@ -17,6 +17,12 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    # A build that exhausts its time budget hits the step timeout-minutes below, which
+    # cleanly kills the nspawn build tree but marks the job failed. continue-on-error at
+    # the job level keeps the workflow run green (no failure email); the cache is still
+    # saved and the package resumes on the next dispatch. (Step-level continue-on-error
+    # does NOT suppress a timeout-minutes failure.)
+    continue-on-error: true
     container:
       image: archlinux
       options: --privileged
@@ -82,9 +88,9 @@ jobs:
       - name: Build ${{ github.event.inputs.pkgbase }}
         uses: arch4edu/cactus/actions/build-package@main
         id: build
+        timeout-minutes: ${{ steps.cache.outputs.enabled == 'true' && 300 || 350 }}
         with:
           pkgbase: ${{ github.event.inputs.pkgbase }}
-          timeout: ${{ steps.cache.outputs.enabled == 'true' && 300 || 350 }}
 
       - name: Save build cache
         if: ${{ !cancelled() && steps.cache.outputs.enabled == 'true' && steps.build.outputs.result != 'built' && steps.build.conclusion != 'skipped' }}
