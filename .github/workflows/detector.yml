@@ -51,3 +51,30 @@ jobs:
 
       - name: Check for broken links
         run: python -m cactus.detector.check_links repository
+
+  check-links-aarch64:
+    runs-on: ubuntu-24.04-arm
+    container:
+      image: arch4edu/archlinuxarm
+    env:
+      CACTUS_CONFIG: ${{ secrets.CACTUS_CONFIG }}
+
+    steps:
+      - name: Initialize Arch Linux ARM keyring
+        run: |
+          pacman-key --init
+          pacman-key --populate archlinuxarm
+
+      - uses: arch4edu/cactus/actions/upgrade-archlinux@main
+        with:
+          arch: aarch64
+
+      - name: Install runtime dependencies
+        run: pacman -S --noconfirm --needed python-mysqlclient
+
+      - uses: arch4edu/cactus/actions/setup-cactus@main
+
+      - uses: arch4edu/cactus/actions/checkout-repository@main
+
+      - name: Check for broken links
+        run: python -m cactus.detector.check_links repository aarch64

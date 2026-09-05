@@ -23,9 +23,9 @@ import traceback
 import urllib.request
 from pathlib import Path
 
-# v1 covers only x86_64: the available-.so set comes from this container's own
-# `pacman -Fyy`, which cannot see aarch64's repos.
-ARCH = 'x86_64'
+# Each arch runs the check in its own container: the available-.so set comes from
+# this container's own `pacman -Fyy`, which can only see its own architecture's
+# repos, so aarch64 needs a second run on an ARM host.
 PREFIX = 'Broken links: '
 # The dynamic loader and libc are never "missing"; musl and other foreign libcs
 # ride along in bundled binaries and cannot be resolved from Arch repos.
@@ -53,21 +53,22 @@ def read_db(blob):
     return out
 
 
-def fetch(mirror, name):
-    url = f'{mirror}/{ARCH}/{name}'
+def fetch(mirror, arch, name):
+    url = f'{mirror}/{arch}/{name}'
     with urllib.request.urlopen(url, timeout=120) as response:
         return response.read()
 
 
-def available_sonames():
+def available_sonames(arch):
     # Every .so provided by an installed sync database, basename only, matching how
-    # DT_NEEDED records a soname. multilib is enabled so a native package linking a
-    # 32-bit-only library is not falsely flagged.
-    subprocess.run(
-        ['bash', '-c',
-         'grep -q "^\\[multilib\\]" /etc/pacman.conf || '
-         'printf "[multilib]\\nInclude = /etc/pacman.d/mirrorlist\\n" >> /etc/pacman.conf'],
-        check=True)
+    # DT_NEEDED records a soname. On x86_64 multilib is enabled so a native package
+    # linking a 32-bit-only library is not falsely flagged; aarch64 has no multilib.
+    if arch == 'x86_64':
+        subprocess.run(
+            ['bash', '-c',
+             'grep -q "^\\[multilib\\]" /etc/pacman.conf || '
+             'printf "[multilib]\\nInclude = /etc/pacman.d/mirrorlist\\n" >> /etc/pacman.conf'],
+            check=True)
     subprocess.run(['pacman', '-Fyy'], check=True)
     sonames = set()
     for db in Path('/var/lib/pacman/sync').glob('*.files'):
@@ -87,6 +88,7 @@ if __name__ == '__main__':
     from ..models import Status
 
     repository = Path(sys.argv[1])
+    arch = sys.argv[2] if len(sys.argv) > 2 else 'x86_64'
     repo = config['pacman']['repository']
     mirror = config['pacman'].get('mirror') or 'https://repo.arch4edu.org'
 
@@ -94,13 +96,13 @@ if __name__ == '__main__':
     # transient mirror or pacman failure should be logged and skipped, not turn the
     # whole detector run red. It runs again in 12 hours.
     try:
-        available = available_sonames()
+        available = available_sonames(arch)
         # arch4edu's own libraries satisfy each other's links.
-        repo_files = read_db(fetch(mirror, f'{repo}.files.tar.gz'))
+        repo_files = read_db(fetch(mirror, arch, f'{repo}.files.tar.gz'))
         # The links database copies each package's db `desc` alongside its `links`
         # file, so %BASE% is read from the links entry itself -- no version-skewed
         # join with the files database.
-        links = read_db(fetch(mirror, f'{repo}.links.tar.gz'))
+        links = read_db(fetch(mirror, arch, f'{repo}.links.tar.gz'))
     except Exception:
         logger.error('Could not gather link data; skipping the check this run')
         traceback.print_exc()
@@ -123,14 +125,16 @@ if __name__ == '__main__':
     logger.info('Checking links against %d available sonames', len(available))
     broken = {}       # repo_path -> {soname}
     checked = set()   # repo_paths actually evaluated this run
+    # The per-arch links database describes this arch's packages plus `any` packages;
+    # `any` is architecture-independent and shares one Status row, so only the primary
+    # x86_64 run owns it -- aarch64 considers only aarch64/ dirs.
+    accept = (arch, 'any') if arch == 'x86_64' else (arch,)
     for fields in links.values():
         base = (fields.get('%BASE%') or [None])[0]
         if not base:
             continue
-        # The x86_64 links database describes x86_64 and any packages; pick whichever
-        # directory the checkout actually keeps this pkgbase in.
         repo_path = next(
-            (p for p in paths.get(base, []) if p.split('/', 1)[0] in (ARCH, 'any')), None)
+            (p for p in paths.get(base, []) if p.split('/', 1)[0] in accept), None)
         if not repo_path:
             continue
 
