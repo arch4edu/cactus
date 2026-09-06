@@ -55,7 +55,8 @@ def read_db(blob):
 
 def fetch(mirror, arch, name):
     url = f'{mirror}/{arch}/{name}'
-    with urllib.request.urlopen(url, timeout=120) as response:
+    request = urllib.request.Request(url, headers={'User-Agent': 'nvchecker'})
+    with urllib.request.urlopen(request, timeout=120) as response:
         return response.read()
 
 
