@@ -63,3 +63,41 @@ nlopt:
   alpm: nlopt
   provided: libnlopt.so
   strip_release: true
+libbluray:
+  source: alpm
+  alpm: libbluray
+  provided: libbluray.so
+  strip_release: true
+libjxl:
+  source: alpm
+  alpm: libjxl
+  provided: libjxl.so
+  strip_release: true
+x265:
+  source: alpm
+  alpm: x265
+  provided: libx265.so
+  strip_release: true
+ada:
+  source: alpm
+  alpm: ada
+  from_pattern: '^(\d+)\..*'
+  to_pattern: '\1'
+libvpx:
+  source: alpm
+  alpm: libvpx
+  provided: libvpx.so
+  strip_release: true
+abseil:
+  source: alpm
+  alpm: abseil-cpp
+  from_pattern: '^20(\d{2})(\d{2}).*'
+  to_pattern: '\1\2'
+sycl:
+  source: alpm
+  alpm: intel-oneapi-compiler-dpcpp-cpp-runtime
+kokkos:
+  source: aur
+  aur: kokkos
+  from_pattern: '^(\d+\.\d+)\..*'
+  to_pattern: '\1'
