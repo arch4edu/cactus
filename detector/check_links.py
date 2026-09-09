@@ -91,7 +91,7 @@ if __name__ == '__main__':
     repository = Path(sys.argv[1])
     arch = sys.argv[2] if len(sys.argv) > 2 else 'x86_64'
     repo = config['pacman']['repository']
-    mirror = config['pacman'].get('mirror') or 'https://repository.arch4edu.org'
+    mirror = config['pacman'].get('mirror') or 'https://mirrors.tuna.tsinghua.edu.cn/arch4edu'
 
     # Best-effort: this is a warn-only pass that runs after the database update, so a
     # transient mirror or pacman failure should be logged and skipped, not turn the
