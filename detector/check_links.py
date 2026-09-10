@@ -29,7 +29,7 @@ from pathlib import Path
 PREFIX = 'Broken links: '
 # The dynamic loader and libc are never "missing"; musl and other foreign libcs
 # ride along in bundled binaries and cannot be resolved from Arch repos.
-IGNORE = re.compile(r'^(ld-linux.*|ld\.so.*|libc\.so.*|libc\.musl.*)$')
+IGNORE = re.compile(r'^(ld-linux.*|ld64\.so.*|ld\.so.*|libc\.so.*|libc\.musl.*)$')
 
 
 def read_db(blob):
