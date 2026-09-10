@@ -38,6 +38,14 @@ protobuf:
   alpm: protobuf
   provided: libprotobuf.so
   strip_release: true
+gdal:
+  source: alpm
+  alpm: gdal
+  from_pattern: '^(\d+\.\d+)\..*'
+  to_pattern: '\1'
+scotch:
+  source: alpm
+  alpm: scotch
 jsoncpp:
   source: alpm
   alpm: jsoncpp
