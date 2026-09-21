@@ -109,3 +109,8 @@ kokkos:
   aur: kokkos
   from_pattern: '^(\d+\.\d+)\..*'
   to_pattern: '\1'
+tbb:
+  source: alpm
+  alpm: onetbb
+  from_pattern: '^(\d+\.\d+)\..*'
+  to_pattern: '\1'
