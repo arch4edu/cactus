@@ -69,7 +69,6 @@ poppler:
 nlopt:
   source: alpm
   alpm: nlopt
-  provided: libnlopt.so
   strip_release: true
 libbluray:
   source: alpm
@@ -112,5 +111,10 @@ kokkos:
 tbb:
   source: alpm
   alpm: onetbb
+  from_pattern: '^(\d+\.\d+)\..*'
+  to_pattern: '\1'
+openexr:
+  source: alpm
+  alpm: openexr
   from_pattern: '^(\d+\.\d+)\..*'
   to_pattern: '\1'
