@@ -118,3 +118,8 @@ openexr:
   alpm: openexr
   from_pattern: '^(\d+\.\d+)\..*'
   to_pattern: '\1'
+aws-c-common:
+  source: alpm
+  alpm: aws-c-common
+  from_pattern: '^(\d+\.\d+)\..*'
+  to_pattern: '\1'
