@@ -17,6 +17,19 @@ outputs:
 runs:
   using: "composite"
   steps:
+    # Cache the scanner databases, rotated hourly like the pacman package cache.
+    - id: dbkey
+      shell: bash
+      run: |
+        timestamp=$(date +%F-%T)
+        echo "key=scanner-db-${timestamp:0:14}00" >> $GITHUB_OUTPUT
+
+    - uses: actions/cache@v4
+      with:
+        path: /var/lib/clamav
+        key: ${{ steps.dbkey.outputs.key }}
+        restore-keys: scanner-db-
+
     - shell: bash -e {0}
       id: build
       run: |
@@ -34,8 +47,19 @@ runs:
         cd repository/${{ inputs.pkgbase }}
         su makepkg -c cactus-build 2>&1 | tee build.log
         if grep -q 'Cactus has successfully built the package.' build.log; then
-          echo "result=built" >> $GITHUB_OUTPUT
-          echo "detail=" >> $GITHUB_OUTPUT
+          # Malware gate: nothing is uploaded or pushed until scan-package is clean.
+          rc=0
+          DETAIL="$(scan-package)" || rc=$?
+          if [ "$rc" -eq 0 ]; then
+            echo "result=built" >> $GITHUB_OUTPUT
+            echo "detail=" >> $GITHUB_OUTPUT
+          elif [ "$rc" -eq 1 ]; then
+            echo "result=failed" >> $GITHUB_OUTPUT
+            echo "detail=Malware detected: $DETAIL" >> $GITHUB_OUTPUT
+          else
+            echo "result=failed" >> $GITHUB_OUTPUT
+            echo "detail=$DETAIL" >> $GITHUB_OUTPUT
+          fi
         else
           echo "result=failed" >> $GITHUB_OUTPUT
           DETAIL="$(extract-build-detail)"

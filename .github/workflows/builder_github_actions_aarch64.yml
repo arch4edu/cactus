@@ -38,7 +38,7 @@ jobs:
           arch: aarch64
 
       - name: Install runtime dependencies
-        run: pacman -S --noconfirm --needed base-devel devtools-alarm dbus git github-cli jq pacman-contrib pyalpm python-mysqlclient wget yq zsh
+        run: pacman -S --noconfirm --needed base-devel clamav devtools-alarm dbus git github-cli jq pacman-contrib pyalpm python-mysqlclient wget yq zsh
 
       - uses: arch4edu/cactus/actions/setup-cactus@main
 
