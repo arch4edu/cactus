@@ -31,7 +31,7 @@ jobs:
       - uses: arch4edu/cactus/actions/upgrade-archlinux@main
 
       - name: Install runtime dependencies
-        run: pacman -S --noconfirm --needed base-devel clamav devtools dbus git github-cli jq pacman-contrib pyalpm python-mysqlclient wget yq zsh
+        run: pacman -S --noconfirm --needed base-devel devtools dbus git github-cli jq pacman-contrib pyalpm python-mysqlclient wget yq zsh
 
       - uses: arch4edu/cactus/actions/setup-cactus@main
 
@@ -50,6 +50,8 @@ jobs:
           pacman-repository: ${{ steps.config.outputs.pacman_repository }}
           keyring-repository: ${{ steps.config.outputs.pacman_keyring_repository }}
           mirrorlist-repository: ${{ steps.config.outputs.pacman_mirrorlist_repository }}
+
+      - uses: arch4edu/cactus/actions/setup-scanners@main
 
       - uses: arch4edu/cactus/actions/config-makepkg@main
 

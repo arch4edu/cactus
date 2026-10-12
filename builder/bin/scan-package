@@ -1,20 +1,14 @@
 #!/bin/bash
-# Malware gate for a built package, run from the directory holding the built
-# *.pkg.tar.zst files. Exit status: 0 clean, 1 malware, 2 error; on 1/2 a
-# one-line summary is printed to stdout, diagnostics go to stderr.
+# Malware gate for a built package: scans the chroot's staged pkgdir trees plus
+# the metadata dotfiles of each built package with ClamAV and the Kaspersky
+# Virus Removal Tool (installed with the builder dependencies as kvrt-<arch>).
+# Must run from the package directory holding the built *.pkg.tar.zst files.
+# Exit status: 0 clean, 1 malware, 2 error; on 1/2 a one-line summary goes to
+# stdout, diagnostics and the full detection list to stderr.
 
 set -e
 
 conf="$(dirname "$(readlink -f "$0")")/../clamd.conf"
-
-freshclam --quiet >&2 || echo "ClamAV: freshclam failed, using the cached database" >&2
-
-mkdir -p /run/clamav
-clamd --config-file="$conf"
-for _ in $(seq 60); do
-  [ -S /run/clamav/clamd.sock ] && break
-  sleep 1
-done
 
 # makepkg stages each split under build/<pkgbase>/pkg; pkgbase comes from the
 # PKGBUILD and may differ from the repository name, so match by built names.
@@ -31,45 +25,80 @@ for cand in $(find /mnt -maxdepth 5 -type d -path '*/build/*/pkg' -printf '%T@ %
   done
 done
 if [ -z "$pkgdirbase" ]; then
-  echo "ClamAV: no pkgdir found"
+  echo "no pkgdir found"
   exit 2
 fi
 
+# The metadata dotfiles (e.g. .INSTALL) only exist inside the archives.
 work=$(mktemp -d)
 for pkg in *.pkg.tar.zst; do
   mkdir "$work/${pkg%.pkg.tar.zst}"
   if ! bsdtar -xf "$pkg" -C "$work/${pkg%.pkg.tar.zst}" --include '.*' >&2; then
     rm -rf "$work"
-    echo "ClamAV: failed to extract $pkg metadata"
+    echo "failed to extract $pkg metadata"
     exit 2
   fi
 done
 
-rc=0
+: > /tmp/scan-hits
+fail=""
+
+# --- ClamAV ---
+freshclam --quiet >&2 || echo "ClamAV: freshclam failed, using the cached database" >&2
+mkdir -p /run/clamav
+clamd --config-file="$conf" || :
+for _ in $(seq 60); do
+  [ -S /run/clamav/clamd.sock ] && break
+  sleep 1
+done
+clamav_rc=0
 : > /tmp/clamdscan.log
 for d in "$pkgdirbase" "$work"; do
   r=0
   clamdscan --config-file="$conf" --multiscan --fdpass "$d" >> /tmp/clamdscan.log || r=$?
   if [ "$r" -eq 1 ]; then
-    rc=1
-  elif [ "$r" -ne 0 ] && [ "$rc" -ne 1 ]; then
-    rc=2
+    clamav_rc=1
+  elif [ "$r" -ne 0 ] && [ "$clamav_rc" -ne 1 ]; then
+    clamav_rc=2
   fi
 done
+if [ "$clamav_rc" -eq 1 ]; then
+  grep ' FOUND$' /tmp/clamdscan.log | sed -e "s#^$pkgdirbase/[^/]*/##" -e "s#^$work/[^/]*/##" -e 's/ FOUND$//' | sed 's/^/ClamAV: /' >> /tmp/scan-hits
+elif [ "$clamav_rc" -eq 2 ]; then
+  fail="ClamAV: scan error"
+fi
+
+# --- KVRT ---
+printf '%s\n' "$pkgdirbase" "$work" > /tmp/kvrt-customlist
+kvrt_rc=0
+kvrt.run -- -accepteula -silent -adinsilent -customonly -customlist /tmp/kvrt-customlist > /tmp/kvrt.log 2>&1 || kvrt_rc=$?
+if [ "$kvrt_rc" -ne 0 ] || ! grep -q 'Scan is finished with results:' /tmp/kvrt.log; then
+  [ -n "$fail" ] || fail="KVRT: scan did not finish"
+else
+  detected=$(grep -aoE 'Detected: [0-9]+' /tmp/kvrt.log | head -1 | grep -oE '[0-9]+' || true)
+  if [ "${detected:-0}" -gt 0 ]; then
+    before=$(wc -l < /tmp/scan-hits)
+    { grep -aoE 'Threat <[^>]*> is detected on object <[^>]*>' /tmp/kvrt.log | sed -E 's/^Threat <([^>]*)> is detected on object <([^>]*)>$/\2: \1/'
+      grep -aoE 'Action <[^>]*> is selected for threat <[^>]*> on object <[^>]*>' /tmp/kvrt.log | sed -E 's/^Action <[^>]*> is selected for threat <([^>]*)> on object <([^>]*)>$/\2: \1/'
+    } | sort -u | sed -e "s#^$pkgdirbase/[^/]*/##" -e "s#^$work/[^/]*/##" | sed 's/^/KVRT: /' >> /tmp/scan-hits
+    if [ "$(wc -l < /tmp/scan-hits)" -eq "$before" ]; then
+      echo "KVRT: $detected threats detected (see log)" >> /tmp/scan-hits
+    fi
+  fi
+fi
 rm -rf "$work"
 
-if [ "$rc" -eq 1 ]; then
-  grep ' FOUND$' /tmp/clamdscan.log | sed -e "s#^$pkgdirbase/[^/]*/##" -e "s#^$work/[^/]*/##" -e 's/ FOUND$//' >&2
-  hits=$(grep -c ' FOUND$' /tmp/clamdscan.log || true)
-  first=$(grep ' FOUND$' /tmp/clamdscan.log | head -1 | sed -e "s#^$pkgdirbase/[^/]*/##" -e "s#^$work/[^/]*/##" -e 's/ FOUND$//')
-  summary="${first:0:170}"
+if [ -s /tmp/scan-hits ]; then
+  cat /tmp/scan-hits >&2
+  hits=$(wc -l < /tmp/scan-hits)
+  summary=$(head -1 /tmp/scan-hits)
   if [ "$hits" -gt 1 ]; then
     summary="$summary (+$((hits-1)) more)"
   fi
   echo "$summary"
   exit 1
 fi
-if [ "$rc" -ne 0 ]; then
-  echo "ClamAV: scan error"
+if [ -n "$fail" ]; then
+  echo "$fail"
   exit 2
 fi

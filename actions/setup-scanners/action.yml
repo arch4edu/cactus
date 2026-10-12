@@ -1,0 +1,21 @@
+name: "Setup malware scanners"
+description: "Restore the scanner database cache and install the scanners"
+
+runs:
+  using: "composite"
+  steps:
+    # Cache the scanner databases, rotated hourly like the pacman package cache.
+    - id: dbkey
+      shell: bash
+      run: |
+        timestamp=$(date +%F-%T)
+        echo "key=scanner-db-${timestamp:0:14}00" >> $GITHUB_OUTPUT
+
+    - uses: actions/cache@v4
+      with:
+        path: /var/lib/clamav
+        key: ${{ steps.dbkey.outputs.key }}
+        restore-keys: scanner-db-
+
+    - shell: bash -e {0}
+      run: pacman -S --noconfirm --needed clamav kvrt
