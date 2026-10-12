@@ -11,12 +11,6 @@ set -e
 
 conf="$(dirname "$(readlink -f "$0")")/../clamd.conf"
 
-# The diff scan needs the pre-build HEAD; without it (e.g. manual runs) only
-# the artifact engines run.
-if [ -n "${1:-}" ]; then
-  scan-diff "$1" || exit $?
-fi
-
 # makepkg stages each split under build/<pkgbase>/pkg; pkgbase comes from the
 # PKGBUILD and may differ from the repository name, so match by built names.
 pkgdirbase=
@@ -108,4 +102,11 @@ fi
 if [ -n "$fail" ]; then
   echo "$fail"
   exit 2
+fi
+
+# The diff scan is the last engine — it burns API quota, so it only runs once
+# the artifact engines came back clean. It needs the pre-build HEAD; without
+# it (e.g. manual runs) it is skipped.
+if [ -n "${1:-}" ]; then
+  scan-diff "$1"
 fi
