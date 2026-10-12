@@ -1,0 +1,180 @@
+#!/usr/bin/python
+# LLM malware scan of the update diff this build is about to publish: scans the
+# commits made on top of the base commit (the state the workflow checked out)
+# with DeepSeek via the ModelScope API. Must run from the package directory.
+# Pure version/checksum bumps are skipped without any API call.
+# Exit status: 0 clean, 1 malware, 2 error; on 1/2 a
+# one-line summary goes to stdout, diagnostics to stderr.
+
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+SYSTEM = (
+    "You are a strict malware scanner for AUR package update diffs before they are "
+    "built and published to a binary repository. You receive the diff plus the full "
+    "current versions of the changed recipe files for context. Reply with strict JSON "
+    "only, no code fences: {\"verdict\": \"accept\" | \"reject\", \"reason\": \"one "
+    "short sentence\", \"evidence\": [\"quoted diff lines\"]}. Reject suspicious "
+    "changes: unexplained network fetches (curl/wget piped to shells), obfuscation "
+    "(base64|sh, eval of encoded data), package installs at build time (npm/bun/pip of "
+    "packages not part of the build), credential/key access, new unexplained source "
+    "hosts, or anything unrelated to the version update. Accept only clearly benign "
+    "updates."
+)
+
+
+def fail(message):
+    print(message)
+    sys.exit(2)
+
+
+def git(*args):
+    try:
+        return subprocess.run(['git', *args], capture_output=True, text=True, check=True).stdout
+    except subprocess.CalledProcessError as e:
+        fail(f'scan-diff: git {" ".join(args)} failed: {e.stderr.strip()[:200]}')
+
+
+VERSION_KEYS = ('pkgver=', 'pkgrel=', 'epoch=', '_commit=', '_tag=', '_pkgver=', '_version=')
+VERSION_VALUE = re.compile(r'^[A-Za-z0-9._+~:!-]+$')
+# A sums array may be one line or span several: the changed lines seen in a
+# diff are the assignment's opening line, value continuation lines, or both.
+TOKEN = r"('[A-Za-z0-9+/=]{16,}'|'SKIP')"
+SUMS_LINE = re.compile(r'^(sha256sums|sha512sums|sha224sums|sha384sums|sha1sums|md5sums|b2sums)='
+                       rf'\s*\(({TOKEN}\s*)*\)?$')
+VALUE_LINE = re.compile(rf'^({TOKEN}\s*)+\)?$')
+
+
+def changed_lines(diff):
+    # Structural parse: only lines inside hunks (after '@@') are content; each
+    # carries exactly one +/-/space prefix which is stripped. A textual prefix
+    # test cannot distinguish a '+++ ' file header from added content that
+    # itself starts with '++ ', so track the hunk state instead.
+    lines = []
+    in_hunk = False
+    for line in diff.splitlines():
+        if line.startswith('@@'):
+            in_hunk = True
+        elif not in_hunk:
+            continue
+        elif line.startswith(('+', '-')):
+            lines.append(line[1:].strip())
+        elif line.startswith(' ') or line.startswith('\\'):
+            # Context line, or the "\ No newline at end of file" marker that
+            # git emits inside a hunk: hunk content, not a boundary.
+            continue
+        else:
+            in_hunk = False
+    return lines
+
+
+def pure_bump(diff):
+    # A pure version/checksum bump must consist solely of whole, well-formed
+    # assignment lines; anything else (including binary changes) must be scanned.
+    if 'Binary files ' in diff or 'GIT binary patch' in diff:
+        return False
+    changed = changed_lines(diff)
+    if not changed:
+        return False
+    for line in changed:
+        if any(line.startswith(k) for k in VERSION_KEYS):
+            if VERSION_VALUE.match(line.split('=', 1)[1]):
+                continue
+        elif SUMS_LINE.match(line) or VALUE_LINE.match(line):
+            continue
+        return False
+    return True
+
+
+def main():
+    if len(sys.argv) < 2:
+        fail('scan-diff: base commit required')
+    base = sys.argv[1]
+
+    if git('rev-parse', 'HEAD').strip() == base:
+        return 0
+    diff = git('diff', f'{base}..HEAD', '--', '.', ':!.SRCINFO')
+    if not diff.strip() or pure_bump(diff):
+        return 0
+
+    key = os.environ.get('MODELSCOPE_API_KEY')
+    if not key:
+        fail('scan-diff: MODELSCOPE_API_KEY not set')
+
+    pkg = Path.cwd().name
+    if len(diff) > 25000:
+        diff = diff[:25000] + '\n[diff truncated]\n'
+    changed_files = [n for n in git('diff', '--relative', '--name-only', f'{base}..HEAD', '--', '.').splitlines()
+                     if not n.endswith('.SRCINFO')]
+    context = []
+    for name in ['PKGBUILD'] + [n for n in changed_files if n != 'PKGBUILD']:
+        try:
+            text = Path(name).read_text(errors='replace')
+        except Exception as e:
+            print(f'scan-diff: could not read {name}: {e}', file=sys.stderr)
+            continue
+        if len(text) > 16000:
+            text = text[:16000] + '\n[file truncated]\n'
+        context.append(f'--- {name} ---\n{text}')
+        if sum(len(c) for c in context) > 48000:
+            break
+    print(f'scan-diff: scanning diff for {pkg}', file=sys.stderr)
+
+    content = f'package: {pkg}\n\ndiff:\n{diff}'
+    if context:
+        content += '\n\ncurrent files:\n' + '\n\n'.join(context)
+    payload = {'model': 'deepseek-ai/DeepSeek-V4.1-Flash', 'temperature': 0, 'messages': [
+        {'role': 'system', 'content': SYSTEM},
+        {'role': 'user', 'content': content}]}
+    request = urllib.request.Request(
+        'https://api-inference.modelscope.cn/v1/chat/completions',
+        data=json.dumps(payload).encode(),
+        headers={'Content-Type': 'application/json', 'Authorization': f'Bearer {key}'})
+    verdict = None
+    last = ''
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(request, timeout=300) as response:
+                content = json.load(response)['choices'][0]['message']['content']
+        except urllib.error.HTTPError as e:
+            last = f'HTTP {e.code}: {e.read().decode()[:200]}'
+            time.sleep(4 * (attempt + 1))
+            continue
+        except Exception as e:
+            last = str(e)
+            time.sleep(4 * (attempt + 1))
+            continue
+        try:
+            verdict = json.loads(content.strip().strip('`').removeprefix('json').strip(),
+                                 strict=False)
+        except Exception as e:
+            fail(f'scan-diff: unparseable response: {e}')
+        break
+    if verdict is None:
+        fail(f'scan-diff: scan failed: {last}')
+    if not isinstance(verdict, dict):
+        fail(f'scan-diff: unusable response {str(verdict)[:200]}')
+
+    if verdict.get('verdict') == 'accept':
+        return 0
+    if verdict.get('verdict') == 'reject':
+        evidence = verdict.get('evidence')
+        if not isinstance(evidence, list):
+            evidence = []
+        for item in evidence[:5]:
+            print('evidence:', item, file=sys.stderr)
+        reason = ' '.join(str(verdict.get('reason', '')).split())
+        print(reason)
+        return 1
+    fail(f'scan-diff: unusable response {str(verdict)[:200]}')
+
+
+if __name__ == '__main__':
+    sys.exit(main())

@@ -1,7 +1,8 @@
 #!/bin/bash
-# Malware gate for a built package: scans the chroot's staged pkgdir trees plus
-# the metadata dotfiles of each built package with ClamAV and the Kaspersky
-# Virus Removal Tool (installed with the builder dependencies as kvrt-<arch>).
+# Malware gate for a built package: scans the update diff with an LLM (scan-diff,
+# when a base commit is given) and the chroot's staged pkgdir trees plus the
+# metadata dotfiles of each built package with ClamAV and the Kaspersky Virus
+# Removal Tool (installed with the builder dependencies as kvrt-<arch>).
 # Must run from the package directory holding the built *.pkg.tar.zst files.
 # Exit status: 0 clean, 1 malware, 2 error; on 1/2 a one-line summary goes to
 # stdout, diagnostics and the full detection list to stderr.
@@ -9,6 +10,12 @@
 set -e
 
 conf="$(dirname "$(readlink -f "$0")")/../clamd.conf"
+
+# The diff scan needs the pre-build HEAD; without it (e.g. manual runs) only
+# the artifact engines run.
+if [ -n "${1:-}" ]; then
+  scan-diff "$1" || exit $?
+fi
 
 # makepkg stages each split under build/<pkgbase>/pkg; pkgbase comes from the
 # PKGBUILD and may differ from the repository name, so match by built names.

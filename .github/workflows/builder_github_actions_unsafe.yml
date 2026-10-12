@@ -34,6 +34,7 @@ jobs:
         - /:/ubuntu
     env:
       CACTUS_CONFIG: ${{ secrets.CACTUS_CONFIG }}
+      MODELSCOPE_API_KEY: ${{ secrets.MODELSCOPE_API_KEY }}
 
     steps:
       - uses: arch4edu/cactus/actions/update-status-js@main

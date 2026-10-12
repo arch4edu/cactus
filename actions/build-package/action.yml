@@ -38,6 +38,7 @@ runs:
         fi
         chown -R makepkg:root repository
         cd repository/${{ inputs.pkgbase }}
+        pre_head=$(git rev-parse HEAD)
         su makepkg -c cactus-build 2>&1 | tee build.log
         if grep -q 'Cactus has successfully built the package.' build.log; then
           if [ "$SKIP_SCAN" = "true" ]; then
@@ -46,9 +47,10 @@ runs:
             echo "result=built" >> $GITHUB_OUTPUT
             echo "detail=malware scan skipped by manual override" >> $GITHUB_OUTPUT
           else
-            # Malware gate: nothing is uploaded or pushed until scan-package is clean.
+            # Malware gate: nothing is uploaded or pushed until the update diff
+            # scan and the artifact scans are clean.
             rc=0
-            DETAIL="$(scan-package)" || rc=$?
+            DETAIL="$(scan-package "$pre_head")" || rc=$?
             if [ "$rc" -eq 0 ]; then
               echo "result=built" >> $GITHUB_OUTPUT
               echo "detail=" >> $GITHUB_OUTPUT
