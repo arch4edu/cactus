@@ -1,6 +1,31 @@
 #!/bin/sh
+# Import the PKGBUILD and every file it references (sources, install and
+# changelog files), plus files that are already tracked in the repository.
+# Files that only the AUR snapshot carries (e.g. upstream maintainer tooling
+# like a Makefile) are not imported unless the PKGBUILD references them.
+referenced=$(makepkg --printsrcinfo |
+	sed -n 's/^[[:space:]]*\(source\|install\|changelog\)[_a-z0-9]*[[:space:]]*=[[:space:]]*//p' |
+	while read -r source
+	do
+		source=${source##*::}
+		case "$source" in
+			*://*) ;;
+			*) printf '%s\n%s\n' "${source%%/*}" "${source##*/}" ;;
+		esac
+	done)
+referenced="PKGBUILD
+$referenced"
+
 while read line
 do
+	case "
+$referenced
+" in
+		*"
+$line
+"*) ;;
+		*) git cat-file -e "HEAD:./$line" 2>/dev/null || continue ;;
+	esac
 	git add "$line"
 done < .cactus_filelist
 
