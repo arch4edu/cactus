@@ -8,6 +8,10 @@ on:
       pkgbase:
         description: 'Path to pkgbase'
         required: true
+      skip_scan:
+        description: 'Set to true to skip the malware scan (manual false-positive override)'
+        required: false
+        default: ''
 
 jobs:
 
@@ -58,7 +62,8 @@ jobs:
           keyring-repository: ${{ steps.config.outputs.pacman_keyring_repository }}
           mirrorlist-repository: ${{ steps.config.outputs.pacman_mirrorlist_repository }}
 
-      - uses: arch4edu/cactus/actions/setup-scanners@main
+      - if: ${{ github.event.inputs.skip_scan != 'true' }}
+        uses: arch4edu/cactus/actions/setup-scanners@main
 
       - name: Install devtools-arch4edu-extra
         run: pacman -S --noconfirm --needed devtools-arch4edu-extra
@@ -83,6 +88,7 @@ jobs:
         id: build
         with:
           pkgbase: ${{ github.event.inputs.pkgbase }}
+          skip-scan: ${{ github.event.inputs.skip_scan }}
 
       - uses: arch4edu/cactus/actions/upload-log@main
         with:

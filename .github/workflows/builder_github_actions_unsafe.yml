@@ -12,6 +12,10 @@ on:
         description: 'Run whose artifacts may hold a build cache to resume from'
         required: false
         default: ''
+      skip_scan:
+        description: 'Set to true to skip the malware scan (manual false-positive override)'
+        required: false
+        default: ''
 
 jobs:
 
@@ -63,7 +67,8 @@ jobs:
           keyring-repository: ${{ steps.config.outputs.pacman_keyring_repository }}
           mirrorlist-repository: ${{ steps.config.outputs.pacman_mirrorlist_repository }}
 
-      - uses: arch4edu/cactus/actions/setup-scanners@main
+      - if: ${{ github.event.inputs.skip_scan != 'true' }}
+        uses: arch4edu/cactus/actions/setup-scanners@main
 
       - uses: arch4edu/cactus/actions/config-makepkg@main
 
@@ -93,6 +98,7 @@ jobs:
         timeout-minutes: ${{ steps.cache.outputs.enabled == 'true' && 300 || 350 }}
         with:
           pkgbase: ${{ github.event.inputs.pkgbase }}
+          skip-scan: ${{ github.event.inputs.skip_scan }}
 
       - name: Save build cache
         if: ${{ !cancelled() && steps.cache.outputs.enabled == 'true' && steps.build.outputs.result != 'built' && steps.build.conclusion != 'skipped' }}

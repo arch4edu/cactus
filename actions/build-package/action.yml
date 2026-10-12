@@ -5,6 +5,10 @@ inputs:
   pkgbase:
     description: 'Package base path (e.g., x86_64/gtk2)'
     required: true
+  skip-scan:
+    description: 'Skip the malware scan (manual false-positive override)'
+    required: false
+    default: ''
 
 outputs:
   result:
@@ -19,6 +23,8 @@ runs:
   steps:
     - shell: bash -e {0}
       id: build
+      env:
+        SKIP_SCAN: ${{ inputs.skip-scan }}
       run: |
         # Download dependencies (no logging)
         if ! python -m cactus.builder.download-depends repository ${{ inputs.pkgbase }}; then
@@ -34,18 +40,25 @@ runs:
         cd repository/${{ inputs.pkgbase }}
         su makepkg -c cactus-build 2>&1 | tee build.log
         if grep -q 'Cactus has successfully built the package.' build.log; then
-          # Malware gate: nothing is uploaded or pushed until scan-package is clean.
-          rc=0
-          DETAIL="$(scan-package)" || rc=$?
-          if [ "$rc" -eq 0 ]; then
+          if [ "$SKIP_SCAN" = "true" ]; then
+            # Manual override for a false-positive scan failure; only settable via
+            # the workflow_dispatch input of the same name.
             echo "result=built" >> $GITHUB_OUTPUT
-            echo "detail=" >> $GITHUB_OUTPUT
-          elif [ "$rc" -eq 1 ]; then
-            echo "result=failed" >> $GITHUB_OUTPUT
-            echo "detail=Malware detected: $DETAIL" >> $GITHUB_OUTPUT
+            echo "detail=malware scan skipped by manual override" >> $GITHUB_OUTPUT
           else
-            echo "result=failed" >> $GITHUB_OUTPUT
-            echo "detail=$DETAIL" >> $GITHUB_OUTPUT
+            # Malware gate: nothing is uploaded or pushed until scan-package is clean.
+            rc=0
+            DETAIL="$(scan-package)" || rc=$?
+            if [ "$rc" -eq 0 ]; then
+              echo "result=built" >> $GITHUB_OUTPUT
+              echo "detail=" >> $GITHUB_OUTPUT
+            elif [ "$rc" -eq 1 ]; then
+              echo "result=failed" >> $GITHUB_OUTPUT
+              echo "detail=Malware detected: $DETAIL" >> $GITHUB_OUTPUT
+            else
+              echo "result=failed" >> $GITHUB_OUTPUT
+              echo "detail=$DETAIL" >> $GITHUB_OUTPUT
+            fi
           fi
         else
           echo "result=failed" >> $GITHUB_OUTPUT
