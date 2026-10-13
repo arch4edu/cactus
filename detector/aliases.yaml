@@ -123,3 +123,8 @@ aws-c-common:
   alpm: aws-c-common
   from_pattern: '^(\d+\.\d+)\..*'
   to_pattern: '\1'
+jxrlib:
+  source: alpm
+  alpm: jxrlib
+  from_pattern: '^(\d+\.\d+)\..*'
+  to_pattern: '\1'
