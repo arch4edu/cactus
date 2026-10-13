@@ -41,6 +41,7 @@ jobs:
 
       - name: Run nvchecker
         run: |
+          set -o pipefail
           mkdir -p nvchecker
           [ -f nvchecker/newver.json ] && mv nvchecker/newver.json nvchecker/oldver.json
           sed "s/GITHUB_TOKEN/${{ steps.config.outputs.github_token }}/" cactus/detector/keyfile.toml > keyfile.toml
@@ -94,6 +95,7 @@ jobs:
 
       - name: Run nvchecker
         run: |
+          set -o pipefail
           mkdir -p nvchecker
           [ -f nvchecker/newver.json ] && mv nvchecker/newver.json nvchecker/oldver.json
           sed "s/GITHUB_TOKEN/${{ steps.config.outputs.github_token }}/" cactus/detector/keyfile.toml > keyfile.toml
