@@ -89,6 +89,41 @@ else
 fi
 rm -rf "$work"
 
+# Known false positives whitelisted in cactus.yaml (scan-ignore): a hit is dropped
+# when its scanner, path and threat all match a rule; path and threat are shell
+# patterns, scanner is optional (empty = any).
+if [ -s /tmp/scan-hits ]; then
+  rules=$(yq -r '.["scan-ignore"][]? | [(.scanner // ""), (.path // ""), (.threat // "")] | @tsv' cactus.yaml 2>/dev/null) || rules=""
+  if [ -n "$rules" ]; then
+    kept=$(mktemp)
+    while IFS= read -r hit; do
+      scanner="${hit%%:*}"
+      rest="${hit#*: }"
+      path="${rest%%: *}"
+      threat="${rest#*: }"
+      drop=""
+      while IFS= read -r rule; do
+        rscanner="${rule%%$'\t'*}"
+        rrest="${rule#*$'\t'}"
+        rpath="${rrest%%$'\t'*}"
+        rthreat="${rrest#*$'\t'}"
+        [ -n "$rpath" ] || continue
+        [ -z "$rscanner" ] || [ "${rscanner,,}" = "${scanner,,}" ] || continue
+        if [[ "$path" == $rpath ]] && { [ -z "$rthreat" ] || [[ "$threat" == $rthreat ]]; }; then
+          drop=1
+          break
+        fi
+      done <<< "$rules"
+      if [ -n "$drop" ]; then
+        echo "scan-ignore: $hit" >&2
+      else
+        printf '%s\n' "$hit" >> "$kept"
+      fi
+    done < /tmp/scan-hits
+    mv "$kept" /tmp/scan-hits
+  fi
+fi
+
 if [ -s /tmp/scan-hits ]; then
   cat /tmp/scan-hits >&2
   hits=$(wc -l < /tmp/scan-hits)
