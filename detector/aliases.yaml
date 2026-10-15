@@ -128,3 +128,8 @@ jxrlib:
   alpm: jxrlib
   from_pattern: '^(\d+\.\d+)\..*'
   to_pattern: '\1'
+petsc:
+  source: aur
+  aur: petsc
+  from_pattern: '^(\d+\.\d+)\..*'
+  to_pattern: '\1'
