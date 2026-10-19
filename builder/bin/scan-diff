@@ -47,7 +47,7 @@ VERSION_VALUE = re.compile(r'^[A-Za-z0-9._+~:!-]+$')
 # A sums array may be one line or span several: the changed lines seen in a
 # diff are the assignment's opening line, value continuation lines, or both.
 # The name may carry a per-arch suffix (sha256sums_x86_64) and += appends.
-TOKEN = r"('[A-Za-z0-9+/=]{16,}'|'SKIP')"
+TOKEN = r"('[A-Za-z0-9+/=]{16,}'|\"[A-Za-z0-9+/=]{16,}\"|'SKIP'|\"SKIP\")"
 SUMS_LINE = re.compile(r'^(sha256sums|sha512sums|sha224sums|sha384sums|sha1sums|md5sums|b2sums)'
                        r'(_[a-z0-9_]+)?\+?='
                        rf'\s*\(({TOKEN}\s*)*\)?$')
