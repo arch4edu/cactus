@@ -42,12 +42,14 @@ def git(*args):
         fail(f'scan-diff: git {" ".join(args)} failed: {e.stderr.strip()[:200]}')
 
 
-VERSION_KEYS = ('pkgver=', 'pkgrel=', 'epoch=', '_commit=', '_tag=', '_pkgver=', '_version=')
+VERSION_KEY = re.compile(r'^([a-z0-9_]*(?:ver|version)|pkgrel|epoch|_commit|_tag)$')
 VERSION_VALUE = re.compile(r'^[A-Za-z0-9._+~:!-]+$')
 # A sums array may be one line or span several: the changed lines seen in a
 # diff are the assignment's opening line, value continuation lines, or both.
+# The name may carry a per-arch suffix (sha256sums_x86_64) and += appends.
 TOKEN = r"('[A-Za-z0-9+/=]{16,}'|'SKIP')"
-SUMS_LINE = re.compile(r'^(sha256sums|sha512sums|sha224sums|sha384sums|sha1sums|md5sums|b2sums)='
+SUMS_LINE = re.compile(r'^(sha256sums|sha512sums|sha224sums|sha384sums|sha1sums|md5sums|b2sums)'
+                       r'(_[a-z0-9_]+)?\+?='
                        rf'\s*\(({TOKEN}\s*)*\)?$')
 VALUE_LINE = re.compile(rf'^({TOKEN}\s*)+\)?$')
 
@@ -84,9 +86,9 @@ def pure_bump(diff):
     if not changed:
         return False
     for line in changed:
-        if any(line.startswith(k) for k in VERSION_KEYS):
-            if VERSION_VALUE.match(line.split('=', 1)[1]):
-                continue
+        key, sep, value = line.partition('=')
+        if sep and VERSION_KEY.match(key) and VERSION_VALUE.match(value):
+            continue
         elif SUMS_LINE.match(line) or VALUE_LINE.match(line):
             continue
         return False
