@@ -130,7 +130,7 @@ def main():
     content = f'package: {pkg}\n\ndiff:\n{diff}'
     if context:
         content += '\n\ncurrent files:\n' + '\n\n'.join(context)
-    payload = {'model': 'deepseek-ai/DeepSeek-V4.1-Flash', 'temperature': 0, 'messages': [
+    payload = {'model': 'deepseek-ai/DeepSeek-V4.1-Flash-1017', 'temperature': 0, 'messages': [
         {'role': 'system', 'content': SYSTEM},
         {'role': 'user', 'content': content}]}
     request = urllib.request.Request(
