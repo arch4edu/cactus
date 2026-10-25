@@ -138,3 +138,7 @@ arrow:
   alpm: arrow
   from_pattern: '^(\d+\.\d+)\..*'
   to_pattern: '\1'
+draco:
+  source: alpm
+  alpm: draco
+  strip_release: true
