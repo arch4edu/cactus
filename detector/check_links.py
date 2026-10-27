@@ -1,7 +1,9 @@
 #!/bin/python
 
 # Final detector stage: flag packages whose binaries need a shared library that
-# no longer exists in any repo (an soname bump left them dangling). The producing
+# no longer exists in any repo (an soname bump left them dangling). Library copies
+# inside package-manager bundle trees (conda environments) are not loader-visible
+# and do not count as providers. The producing
 # side lives in the publisher -- repo-add records each package's DT_NEEDED sonames
 # into the `links` database via bin/scan-links -- and this consumes it.
 #
@@ -30,6 +32,9 @@ PREFIX = 'Broken links: '
 # The dynamic loader and libc are never "missing"; musl and other foreign libcs
 # ride along in bundled binaries and cannot be resolved from Arch repos.
 IGNORE = re.compile(r'^(ld-linux.*|ld64\.so.*|ld\.so.*|libc\.so.*|libc\.musl.*)$')
+# Library copies inside package-manager bundle trees (e.g. conda environments)
+# are not loader-visible and must not satisfy another package's DT_NEEDED.
+BUNDLE_PATHS = ('opt/miniforge/',)
 
 
 def read_db(blob):
@@ -60,10 +65,11 @@ def fetch(mirror, arch, name):
         return response.read()
 
 
-def available_sonames(arch):
+def available_sonames(arch, repo_files):
     # Every .so provided by an installed sync database, basename only, matching how
-    # DT_NEEDED records a soname. On x86_64 multilib is enabled so a native package
-    # linking a 32-bit-only library is not falsely flagged; aarch64 has no multilib.
+    # DT_NEEDED records a soname. Bundle trees are skipped. On x86_64 multilib is
+    # enabled so a native package linking a 32-bit-only library is not falsely
+    # flagged; aarch64 has no multilib.
     if arch == 'x86_64':
         subprocess.run(
             ['bash', '-c',
@@ -72,13 +78,17 @@ def available_sonames(arch):
             check=True)
     subprocess.run(['pacman', '-Fyy'], check=True)
     sonames = set()
+
+    def add(entries):
+        for fields in entries.values():
+            for path in fields.get('%FILES%', []):
+                if '.so' in path and '/' in path and not path.startswith(BUNDLE_PATHS):
+                    sonames.add(path.rsplit('/', 1)[1])
+
+    # arch4edu's own libraries satisfy each other's links.
+    add(repo_files)
     for db in Path('/var/lib/pacman/sync').glob('*.files'):
-        listing = subprocess.run(
-            ['bsdtar', '-xOf', db, '--include', '*/files'],
-            capture_output=True, check=True).stdout.decode('utf-8', 'replace')
-        for line in listing.splitlines():
-            if '.so' in line and '/' in line:
-                sonames.add(line.rsplit('/', 1)[1])
+        add(read_db(db.read_bytes()))
     return sonames
 
 
@@ -97,9 +107,9 @@ if __name__ == '__main__':
     # transient mirror or pacman failure should be logged and skipped, not turn the
     # whole detector run red. It runs again in 12 hours.
     try:
-        available = available_sonames(arch)
         # arch4edu's own libraries satisfy each other's links.
         repo_files = read_db(fetch(mirror, arch, f'{repo}.files.tar.gz'))
+        available = available_sonames(arch, repo_files)
         # The links database copies each package's db `desc` alongside its `links`
         # file, so %BASE% is read from the links entry itself -- no version-skewed
         # join with the files database.
@@ -109,10 +119,16 @@ if __name__ == '__main__':
         traceback.print_exc()
         sys.exit(0)
 
+    # A bundle tree a package ships for itself is still fine for its own links.
+    own = {}
     for fields in repo_files.values():
+        base = (fields.get('%BASE%') or [None])[0]
+        if not base:
+            continue
+        files = own.setdefault(base, set())
         for path in fields.get('%FILES%', []):
             if '.so' in path and '/' in path:
-                available.add(path.rsplit('/', 1)[1])
+                files.add(path.rsplit('/', 1)[1])
 
     # Map a pkgbase to its Status key -- the cactus.yaml path relative to the
     # checkout, which nests under category dirs (x86_64/r/r-ade4) and does not track
@@ -156,9 +172,10 @@ if __name__ == '__main__':
 
         # DT_NEEDED is usually a bare soname, occasionally an rpath-style path;
         # compare basenames against the basename-keyed available set.
+        own_sonames = own.get(base, ())
         missing = {
             so for so in {n.rsplit('/', 1)[-1] for n in fields.get('%LINKS%', [])}
-            if so not in available and not IGNORE.match(so)
+            if so not in available and so not in own_sonames and not IGNORE.match(so)
         }
         if missing:
             # Split packages share one repo_path; union their missing sonames.
