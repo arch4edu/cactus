@@ -142,3 +142,7 @@ draco:
   source: alpm
   alpm: draco
   strip_release: true
+simdjson:
+  source: alpm
+  alpm: simdjson
+  strip_release: true
