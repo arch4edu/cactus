@@ -96,7 +96,7 @@ if __name__ == '__main__':
     import sys
     import yaml
     from .. import config, logger
-    from ..models import Status
+    from ..models import Status, Package
 
     repository = Path(sys.argv[1])
     arch = sys.argv[2] if len(sys.argv) > 2 else 'x86_64'
@@ -138,6 +138,14 @@ if __name__ == '__main__':
     for cactus_yaml in repository.rglob('cactus.yaml'):
         paths.setdefault(cactus_yaml.parent.name, []).append(
             cactus_yaml.parent.relative_to(repository).as_posix())
+    # A split package's pkgbase need not match its directory name and may be built
+    # from shell variables, so map the published filename the publisher recorded
+    # instead of inferring the mapping from PKGBUILDs.
+    checkout_paths = {p for ps in paths.values() for p in ps}
+    published = {}
+    for filename, key in Package.objects.values_list('package', 'key'):
+        if key in checkout_paths:
+            published[filename] = key
 
     logger.info('Checking links against %d available sonames', len(available))
     broken = {}       # repo_path -> {soname}
@@ -150,8 +158,11 @@ if __name__ == '__main__':
         base = (fields.get('%BASE%') or [None])[0]
         if not base:
             continue
-        repo_path = next(
-            (p for p in paths.get(base, []) if p.split('/', 1)[0] in accept), None)
+        filename = (fields.get('%FILENAME%') or [None])[0]
+        repo_path = published.get(filename)
+        if not repo_path or repo_path.split('/', 1)[0] not in accept:
+            repo_path = next(
+                (p for p in paths.get(base, []) if p.split('/', 1)[0] in accept), None)
         if not repo_path:
             continue
 
