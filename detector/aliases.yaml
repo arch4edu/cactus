@@ -146,3 +146,8 @@ simdjson:
   source: alpm
   alpm: simdjson
   strip_release: true
+openjph:
+  source: alpm
+  alpm: openjph
+  from_pattern: '^(\d+\.\d+)\..*'
+  to_pattern: '\1'
