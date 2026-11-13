@@ -58,6 +58,29 @@ def read_db(blob):
     return out
 
 
+MIRROR_FALLBACK = 'https://mirrors.tuna.tsinghua.edu.cn/arch4edu'
+
+
+def fetch_text(url):
+    request = urllib.request.Request(url, headers={'User-Agent': 'nvchecker'})
+    with urllib.request.urlopen(request, timeout=60) as response:
+        return response.read().decode('utf-8', 'replace')
+
+
+def mirrors(mirrorlist_repository, repository, arch):
+    # Servers from the project mirrorlist, top to bottom, with $arch filled in.
+    # The file comments out regional mirrors; they are fallbacks here too.
+    url = (f'https://raw.githubusercontent.com/{mirrorlist_repository}/HEAD/'
+           f'mirrorlist.{repository}')
+    try:
+        text = fetch_text(url)
+    except Exception:
+        return []
+    # Server URLs end in /$arch; fetch() appends the arch itself.
+    return [server.removesuffix('/$arch').replace('$arch', arch) for server in
+            re.findall(r'^\s*#*\s*Server\s*=\s*(\S+)', text, re.M)]
+
+
 def fetch(mirror, arch, name):
     url = f'{mirror}/{arch}/{name}'
     request = urllib.request.Request(url, headers={'User-Agent': 'nvchecker'})
@@ -101,21 +124,47 @@ if __name__ == '__main__':
     repository = Path(sys.argv[1])
     arch = sys.argv[2] if len(sys.argv) > 2 else 'x86_64'
     repo = config['pacman']['repository']
-    mirror = config['pacman'].get('mirror') or 'https://mirrors.tuna.tsinghua.edu.cn/arch4edu'
+
+    # The newest publish is a lower bound for a mirror's lastupdate; a mirror behind
+    # it lacks published packages and would write stale notes. The tolerance covers
+    # lastupdate being written (and uploaded) just before Status is updated.
+    newest = Status.objects.filter(status='PUBLISHED').order_by('-timestamp').first()
+    cutoff = newest.timestamp.timestamp() - 600 if newest else 0
 
     # Best-effort: this is a warn-only pass that runs after the database update, so a
     # transient mirror or pacman failure should be logged and skipped, not turn the
     # whole detector run red. It runs again in 12 hours.
+    repo_files = links = None
+    servers = mirrors(config['pacman']['mirrorlist_repository'], repo, arch)
+    if not servers:
+        logger.warning('Could not read the mirrorlist; falling back to %s', MIRROR_FALLBACK)
+        servers = [MIRROR_FALLBACK]
+    for mirror in servers:
+        try:
+            updated = int(fetch_text(f'{mirror}/lastupdate').strip())
+            if updated < cutoff:
+                logger.warning('Ignoring %s: lastupdate %d predates the newest publish',
+                               mirror, updated)
+                continue
+            # arch4edu's own libraries satisfy each other's links.
+            repo_files = read_db(fetch(mirror, arch, f'{repo}.files.tar.gz'))
+            # The links database copies each package's db `desc` alongside its `links`
+            # file, so %BASE% is read from the links entry itself -- no version-skewed
+            # join with the files database.
+            links = read_db(fetch(mirror, arch, f'{repo}.links.tar.gz'))
+            logger.info('Using mirror %s', mirror)
+            break
+        except Exception as e:
+            logger.warning('Could not read link data from %s: %s; trying the next mirror',
+                           mirror, e)
+    if links is None:
+        logger.error('No up-to-date mirror available; skipping the check this run')
+        sys.exit(0)
+
     try:
-        # arch4edu's own libraries satisfy each other's links.
-        repo_files = read_db(fetch(mirror, arch, f'{repo}.files.tar.gz'))
         available = available_sonames(arch, repo_files)
-        # The links database copies each package's db `desc` alongside its `links`
-        # file, so %BASE% is read from the links entry itself -- no version-skewed
-        # join with the files database.
-        links = read_db(fetch(mirror, arch, f'{repo}.links.tar.gz'))
     except Exception:
-        logger.error('Could not gather link data; skipping the check this run')
+        logger.error('Could not gather available sonames; skipping the check this run')
         traceback.print_exc()
         sys.exit(0)
 
