@@ -151,3 +151,8 @@ openjph:
   alpm: openjph
   from_pattern: '^(\d+\.\d+)\..*'
   to_pattern: '\1'
+libplacebo:
+  source: alpm
+  alpm: libplacebo
+  from_pattern: '^(\d+\.\d+)\..*'
+  to_pattern: '\1'
