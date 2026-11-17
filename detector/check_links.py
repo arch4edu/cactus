@@ -125,12 +125,6 @@ if __name__ == '__main__':
     arch = sys.argv[2] if len(sys.argv) > 2 else 'x86_64'
     repo = config['pacman']['repository']
 
-    # The newest publish is a lower bound for a mirror's lastupdate; a mirror behind
-    # it lacks published packages and would write stale notes. The tolerance covers
-    # lastupdate being written (and uploaded) just before Status is updated.
-    newest = Status.objects.filter(status='PUBLISHED').order_by('-timestamp').first()
-    cutoff = newest.timestamp.timestamp() - 600 if newest else 0
-
     # Best-effort: this is a warn-only pass that runs after the database update, so a
     # transient mirror or pacman failure should be logged and skipped, not turn the
     # whole detector run red. It runs again in 12 hours.
@@ -141,11 +135,6 @@ if __name__ == '__main__':
         servers = [MIRROR_FALLBACK]
     for mirror in servers:
         try:
-            updated = int(fetch_text(f'{mirror}/lastupdate').strip())
-            if updated < cutoff:
-                logger.warning('Ignoring %s: lastupdate %d predates the newest publish',
-                               mirror, updated)
-                continue
             # arch4edu's own libraries satisfy each other's links.
             repo_files = read_db(fetch(mirror, arch, f'{repo}.files.tar.gz'))
             # The links database copies each package's db `desc` alongside its `links`
@@ -158,7 +147,7 @@ if __name__ == '__main__':
             logger.warning('Could not read link data from %s: %s; trying the next mirror',
                            mirror, e)
     if links is None:
-        logger.error('No up-to-date mirror available; skipping the check this run')
+        logger.error('Could not read link data from any mirror; skipping the check this run')
         sys.exit(0)
 
     try:
