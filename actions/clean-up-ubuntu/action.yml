@@ -18,7 +18,9 @@ runs:
         arch-chroot ${{ inputs.root }} dpkg-query -Wf '${Package}\t${Status}\n' | grep installed | cut -f1 > /tmp/ubuntu-packages.txt
 
         # apt-get exits 100 when any named package is absent, and the runner image
-        # changes over time, so remove only the packages actually installed.
+        # changes over time, so remove only the packages actually installed. A
+        # removal can still fail to solve (e.g. a kept package depends on a removed
+        # JDK); freeing disk is an optimisation, so never fail the build over it.
         wanted=$(printf '%s\n' \
           gcc g++ gcc-{9,10,11,12,13,14} g++-{9,10,11,12,13,14} \
           llvm-{14,15,16,17,18} clang-{14,15,16,17,18} clang-format-{14,15,16,17,18} libllvm{14,15,16,17,18} lld-{14,15,16,17,18} \
@@ -26,11 +28,13 @@ runs:
           ruby mysql-client mysql-server \
           google-cloud-cli azure-cli powershell \
           microsoft-edge-stable google-chrome-stable firefox)
-        arch-chroot ${{ inputs.root }} apt-get autoremove -y \
+        if ! arch-chroot ${{ inputs.root }} apt-get autoremove -y \
           $(grep -Fx -f <(printf '%s\n' "$wanted") /tmp/ubuntu-packages.txt) \
           $(grep -P 'libmono-' /tmp/ubuntu-packages.txt) \
           $(grep php8.1 /tmp/ubuntu-packages.txt) \
-          $(grep -P '^r-' /tmp/ubuntu-packages.txt)
+          $(grep -P '^r-' /tmp/ubuntu-packages.txt); then
+          echo "::warning::apt-get could not remove all packages; continuing"
+        fi
 
         cd ${{ inputs.root }}
 
