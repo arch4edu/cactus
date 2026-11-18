@@ -38,11 +38,17 @@ runs:
 
         cd ${{ inputs.root }}
 
-        for i in usr/local/lib/android opt/hostedtoolcache/CodeQL usr/share/swift usr/local/.ghcup usr/share/miniconda usr/local/julia* usr/local/share/powershell usr/local/share/chromium opt/hostedtoolcache/Python opt/hostedtoolcache/go opt/hostedtoolcache/PyPy home/runneradmin/.rustup etc/skel/.rustup home/runner/.rustup
+        # Toolchains the host image ships but this build never uses. The runner's own
+        # tree (home/runner, opt/runner-cache, opt/actionarchivecache) is left alone.
+        for i in usr/local/lib/android opt/hostedtoolcache/CodeQL usr/share/swift usr/local/.ghcup usr/share/miniconda usr/local/julia* usr/local/share/powershell usr/local/share/chromium opt/hostedtoolcache/Python opt/hostedtoolcache/go opt/hostedtoolcache/PyPy home/runneradmin/.rustup etc/skel/.rustup home/runner/.rustup \
+          usr/share/dotnet usr/share/az_* usr/lib/jvm usr/share/java home/packer opt/pipx \
+          opt/hostedtoolcache/node opt/hostedtoolcache/Ruby usr/local/aws-cli usr/local/aws-sam-cli \
+          home/linuxbrew usr/local/share/vcpkg usr/local/n usr/local/lib/node_modules \
+          var/lib/apt/lists var/cache/apt
         do
-          [ ! -d $i ] && continue
-          du -sh $i
-          rm -r $i
+          [ ! -d "$i" ] && continue
+          du -sh "$i"
+          rm -r "$i"
         done
 
         df -h
