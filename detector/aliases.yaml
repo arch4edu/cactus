@@ -156,3 +156,7 @@ libplacebo:
   alpm: libplacebo
   from_pattern: '^(\d+\.\d+)\..*'
   to_pattern: '\1'
+dlib:
+  source: alpm
+  alpm: dlib
+  strip_release: true
