@@ -160,3 +160,8 @@ dlib:
   source: alpm
   alpm: dlib
   strip_release: true
+sndio:
+  source: alpm
+  alpm: sndio
+  provided: libsndio.so
+  strip_release: true
