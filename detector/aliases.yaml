@@ -165,3 +165,7 @@ sndio:
   alpm: sndio
   provided: libsndio.so
   strip_release: true
+gpsd:
+  source: alpm
+  alpm: gpsd
+  strip_release: true
